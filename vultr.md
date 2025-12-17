@@ -4,7 +4,7 @@
 
 | 서버 | 역할 | IP | URL |
 |------|------|-----|-----|
-| **Dashboard 서버** | Streamlit 대시보드 | 158.247.206.2 | http://na4.pe.kr:8501 |
+| **Dashboard 서버** | FastAPI 대시보드 | 158.247.206.2 | http://158.247.206.2:8502 |
 | Collector 서버 | 데이터 수집 (kimptrade) | 64.176.229.30 | - |
 
 > **중요**: Dashboard는 kimptrade가 아닌 **이 레포(order)**에서 관리합니다.
@@ -13,14 +13,22 @@
 
 ## 현재 배포 상태
 
-- **URL**: http://na4.pe.kr:8501
-- **컨테이너**: `kimptrade-dashboard`
-- **포트**: 8501 (localhost만 바인딩, Cloudflare Tunnel 통해 접근)
+### Dashboard V2 (FastAPI) - 현재 운영 중
+- **URL**: http://158.247.206.2:8502
+- **컨테이너**: `kimptrade-dashboard-v2`
+- **포트**: 8502
 - **디자인**: Neon Daybreak (Lime-500, Hard Shadows)
+- **레포 경로**: `/root/order`
+
+### Dashboard V1 (Streamlit) - 레거시
+- **URL**: http://158.247.206.2:8501
+- **컨테이너**: `kimptrade-dashboard`
+- **포트**: 8501
+- **레포 경로**: `/root/kimptrade` (더 이상 업데이트 안함)
 
 ---
 
-## 배포 방법
+## 배포 방법 (Dashboard V2)
 
 ### 1. SSH 접속
 
@@ -31,39 +39,46 @@ ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2
 ### 2. 코드 업데이트
 
 ```bash
-cd /root/kimptrade  # 서버의 코드 경로
+cd /root/order  # Dashboard V2 레포 경로
 
 # 최신 코드 가져오기
 git fetch origin
 git checkout feat/dashboard-migration  # 또는 main (PR 머지 후)
 git pull
-
-# 또는 로컬에서 직접 전송
-# scp -i ~/.ssh/kimptrade_vultr -r ./src/dashboard root@158.247.206.2:/root/kimptrade/src/
 ```
 
 ### 3. Docker 재빌드 및 배포
 
 ```bash
-# 캐시 없이 빌드 (코드 변경 확실히 반영)
-docker compose -f docker-compose.dashboard.yml build --no-cache
+# 캐시 없이 빌드
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
 
 # 컨테이너 재시작
-docker compose -f docker-compose.dashboard.yml down
-docker compose -f docker-compose.dashboard.yml up -d
+docker compose -f docker-compose.dashboard-v2.yml down
+docker compose -f docker-compose.dashboard-v2.yml up -d
 
 # 로그 확인
-docker logs -f kimptrade-dashboard
+docker logs -f kimptrade-dashboard-v2
 ```
 
 ### 4. 배포 확인
 
 ```bash
 # 헬스체크
-curl http://localhost:8501/_stcore/health
+curl http://localhost:8502/api/health
 
 # 컨테이너 상태
-docker ps | grep dashboard
+docker ps | grep dashboard-v2
+```
+
+## 빠른 배포 (로컬에서 한 번에)
+
+```bash
+ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2 "\
+  cd /root/order && \
+  git pull && \
+  docker compose -f docker-compose.dashboard-v2.yml build --no-cache && \
+  docker compose -f docker-compose.dashboard-v2.yml up -d"
 ```
 
 ---
