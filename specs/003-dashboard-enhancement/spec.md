@@ -14,6 +14,11 @@
 - 구현 완료 후 Cloudflare Tunnel 연동하여 외부 접근 제공
 - 기존 Supabase 데이터 연동은 유지
 
+### Session 2025-12-17
+
+- Q: 대시보드 접근 인증 방식? → A: Cloudflare Zero Trust 인증만 사용 (단일 사용자, 추가 인증 불필요)
+- Q: 로깅/모니터링 수준? → A: loguru 콘솔 로깅만 사용 (파일/외부 모니터링 불필요)
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -175,6 +180,8 @@
 - 단일 포지션만 관리 (다중 포지션은 향후 확장)
 - 기존 비상정지, 시스템 상태 기능은 유지
 - Python 3.11+, uvicorn ASGI 서버 사용
+- **인증**: Cloudflare Zero Trust만 사용 (단일 사용자, 앱 레벨 추가 인증 불필요)
+- **로깅**: loguru 콘솔 로깅만 사용 (파일 로깅, 외부 모니터링 불필요)
 
 ## Design Reference
 
