@@ -1,0 +1,796 @@
+# Vultr 서버 작업 분석 보고서
+
+**작성일**: 2025-12-17
+**목적**: 이전 세션 작업과 실제 서버 상태 간의 차이 분석
+
+---
+
+## 1. 요약 (Executive Summary)
+
+### 핵심 발견사항
+
+| 구분 | 이전 세션 작업 | 실제 서버 상태 | 상태 |
+|------|---------------|---------------|------|
+| **Dashboard 버전** | V1 (Streamlit) | V2 (FastAPI) | 🔴 불일치 |
+| **포트** | 8501 | 8502 | 🔴 불일치 |
+| **프레임워크** | Streamlit | FastAPI + Jinja2 | 🔴 불일치 |
+| **이미지 크기** | 1.15GB | 306MB | 🟢 V2 최적화 |
+| **테스트** | Playwright E2E | Unit + Integration | 🟡 테스트 체계 변경 |
+
+### 결론
+**Dashboard V2 (FastAPI)로 이미 전환 완료**됨. 이전 세션에서 작업한 V1 관련 설정은 **레거시**로 분류됨.
+
+---
+
+## 2. 타임라인 분석
+
+### 2.1 Git 커밋 히스토리
+
+```
+이전 세션 작업 (V1 기준)
+│
+├─ 5b306f6  feat(dashboard): migrate dashboard from kimptrade repo
+├─ 7296294  chore: add speckit configuration
+├─ a9ffa6d  docs: add Vultr deployment guide (vultr.md - V1 기준)
+│
+▼ ─────────── 세션 종료 ───────────
+│
+├─ 13b7ff7  feat(spec): add 003-dashboard-enhancement feature spec
+├─ 30290bc  docs(spec): fix speckit analysis issues
+├─ 7138a01  feat(dashboard): implement dashboard v2 with FastAPI + Jinja2  ← V2 구현
+├─ 0920b30  docs(spec): add clarifications for auth and logging
+├─ 28d2aa3  fix(docker): add pydantic-settings dependency
+└─ b9f8b11  docs(deploy): update vultr guide for Dashboard V2  ← vultr.md 업데이트
+```
+
+### 2.2 작업 분기점
+
+| 시점 | 이벤트 |
+|------|--------|
+| 이전 세션 | V1 (Streamlit) 기준으로 배포 가이드, E2E 테스트 작성 |
+| 세션 종료 후 | 003-dashboard-enhancement 스펙 작성 |
+| 새 세션 | V2 (FastAPI + Jinja2) 전면 구현 및 배포 |
+
+---
+
+## 3. 아키텍처 비교
+
+### 3.1 Dashboard V1 (Streamlit) - 레거시
+
+```
+┌─────────────────────────────────────────┐
+│  Dashboard V1 (Streamlit)               │
+│  포트: 8501                              │
+├─────────────────────────────────────────┤
+│                                         │
+│  src/dashboard/                         │
+│  ├── app.py              # Streamlit 앱 │
+│  ├── components/                        │
+│  │   ├── emergency_panel.py            │
+│  │   ├── kimp_chart.py                 │
+│  │   ├── pnl_card.py                   │
+│  │   ├── position_card.py              │
+│  │   ├── system_status.py              │
+│  │   └── trade_history.py              │
+│  ├── services/                          │
+│  │   └── emergency_stop.py             │
+│  └── styles/                            │
+│      └── neon_daybreak.py              │
+│                                         │
+│  Docker: Dockerfile.dashboard           │
+│  Compose: docker-compose.dashboard.yml  │
+│  이미지 크기: 1.15GB                    │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### 3.2 Dashboard V2 (FastAPI) - 현재 운영
+
+```
+┌─────────────────────────────────────────┐
+│  Dashboard V2 (FastAPI + Jinja2)        │
+│  포트: 8502                              │
+├─────────────────────────────────────────┤
+│                                         │
+│  src/dashboard_v2/                      │
+│  ├── main.py             # FastAPI 앱   │
+│  ├── config.py           # Pydantic 설정│
+│  ├── models/             # 데이터 모델  │
+│  ├── routers/            # API 라우터   │
+│  ├── services/           # 비즈니스 로직│
+│  ├── static/             # CSS/JS       │
+│  └── templates/          # Jinja2 HTML  │
+│                                         │
+│  Docker: Dockerfile.dashboard-v2        │
+│  Compose: docker-compose.dashboard-v2.yml│
+│  이미지 크기: 306MB (73% 경량화)        │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### 3.3 주요 아키텍처 차이
+
+| 항목 | V1 (Streamlit) | V2 (FastAPI) |
+|------|----------------|--------------|
+| **프레임워크** | Streamlit (Python) | FastAPI + Jinja2 |
+| **렌더링** | Server-side (Streamlit) | Server-side (Jinja2) |
+| **API** | 없음 (내장) | RESTful API 분리 |
+| **설정 관리** | 환경변수 직접 | Pydantic Settings |
+| **헬스체크** | `/_stcore/health` | `/api/health` |
+| **보안** | 기본 | non-root user |
+
+---
+
+## 4. 파일 구조 비교
+
+### 4.1 로컬 (C:\order)
+
+```
+C:\order/
+├── src/
+│   ├── dashboard/          # V1 (레거시) - 이전 세션에서 마이그레이션
+│   │   ├── app.py
+│   │   ├── components/
+│   │   ├── services/
+│   │   └── styles/
+│   │
+│   └── dashboard_v2/       # V2 (현재 운영) - 새 세션에서 구현
+│       ├── main.py
+│       ├── config.py
+│       ├── models/
+│       ├── routers/
+│       ├── services/
+│       ├── static/
+│       └── templates/
+│
+├── tests/
+│   ├── e2e/               # V1용 Playwright 테스트 (이전 세션)
+│   ├── unit/              # V2용 유닛 테스트 (새 세션)
+│   └── integration/       # V2용 통합 테스트 (새 세션)
+│
+├── docker-compose.dashboard.yml      # V1용
+├── docker-compose.dashboard-v2.yml   # V2용
+├── Dockerfile.dashboard              # V1용
+├── Dockerfile.dashboard-v2           # V2용
+│
+├── vultr.md              # 배포 가이드 (V2 기준으로 업데이트됨)
+└── vultr2.md             # 이 문서
+```
+
+### 4.2 서버 (/root/order)
+
+```
+/root/order/
+├── src/
+│   ├── dashboard/          # V1 (사용 안함)
+│   └── dashboard_v2/       # V2 (실제 운영)
+│
+├── .env                    # 환경변수 (Supabase 등)
+├── docker-compose.dashboard-v2.yml
+├── Dockerfile.dashboard-v2
+└── ...
+```
+
+---
+
+## 5. Docker 설정 비교
+
+### 5.1 컨테이너 현황 (서버)
+
+| 컨테이너 | 이미지 | 상태 | 포트 | 메모리 |
+|----------|--------|------|------|--------|
+| `kimptrade-dashboard-v2` | order-dashboard-v2 | **Up (healthy)** | 8502 | 103MB |
+| `kimptrade-dashboard` | kimptrade-dashboard | Up (healthy) | 8501 | 145MB |
+
+### 5.2 Docker Compose 차이
+
+| 항목 | V1 | V2 |
+|------|----|----|
+| **파일** | `docker-compose.dashboard.yml` | `docker-compose.dashboard-v2.yml` |
+| **컨테이너명** | `kimptrade-dashboard` | `kimptrade-dashboard-v2` |
+| **포트** | `127.0.0.1:8501:8501` | `8502:8502` |
+| **헬스체크** | `curl /_stcore/health` | `python urllib /api/health` |
+| **네트워크** | `kimptrade-dashboard-network` | `kimptrade-network` |
+| **볼륨** | 없음 | static, templates 마운트 |
+
+### 5.3 Dockerfile 차이
+
+| 항목 | V1 | V2 |
+|------|----|----|
+| **베이스** | python:3.11-slim | python:3.11-slim |
+| **의존성 설치** | requirements.txt | 직접 pip install |
+| **사용자** | root | appuser (non-root) |
+| **실행** | `streamlit run` | `uvicorn` |
+| **이미지 크기** | 1.15GB | 306MB |
+
+---
+
+## 6. 테스트 체계 비교
+
+### 6.1 이전 세션 (V1용)
+
+```
+tests/e2e/                    # Playwright E2E 테스트
+├── dashboard.spec.ts         # 대시보드 로드 테스트
+├── emergency.spec.ts         # 비상정지 패널 테스트
+└── components.spec.ts        # 컴포넌트 테스트
+
+설정 파일:
+├── playwright.config.ts      # baseURL: na4.pe.kr:8501
+├── package.json              # @playwright/test
+└── .github/workflows/playwright.yml
+```
+
+**문제점**:
+- baseURL이 `na4.pe.kr:8501` (V1 URL)로 설정됨
+- V2 API 엔드포인트(`/api/health`)와 호환 안됨
+
+### 6.2 현재 세션 (V2용)
+
+```
+tests/
+├── unit/                     # 유닛 테스트
+│   ├── test_dashboard_app.py
+│   ├── test_kimp_service.py
+│   ├── test_pnl_service.py
+│   ├── test_health_service.py
+│   └── test_position_service.py
+│
+└── integration/              # 통합 테스트
+    └── test_dashboard_api.py
+```
+
+**개선점**:
+- Python pytest 기반
+- API 단위 테스트 분리
+- 서비스별 테스트 케이스
+
+---
+
+## 7. 환경변수 비교
+
+### 7.1 V1에서 사용
+
+```env
+SUPABASE_URL=xxx
+SUPABASE_KEY=xxx
+```
+
+### 7.2 V2에서 추가
+
+```env
+# 기존
+SUPABASE_URL=xxx
+SUPABASE_KEY=xxx
+
+# 신규
+REFRESH_INTERVAL=10      # 자동 새로고침 간격
+API_TIMEOUT=10           # API 타임아웃
+FEE_RATE=0.0038          # 수수료율
+DEBUG=false              # 디버그 모드
+```
+
+---
+
+## 8. 접속 정보 비교
+
+### 8.1 URL
+
+| 버전 | URL | 상태 |
+|------|-----|------|
+| **V2** | http://158.247.206.2:8502 | ✅ 운영 중 |
+| V1 | http://158.247.206.2:8501 | 레거시 |
+| V1 (도메인) | http://na4.pe.kr:8501 | 레거시 |
+
+### 8.2 API 엔드포인트 (V2)
+
+| 엔드포인트 | 설명 |
+|------------|------|
+| `GET /` | 메인 대시보드 페이지 |
+| `GET /api/health` | 헬스체크 |
+| `GET /api/kimp` | 김프율 데이터 |
+| `GET /api/position` | 포지션 정보 |
+| `GET /api/pnl` | 손익 정보 |
+
+---
+
+## 9. 영향 분석
+
+### 9.1 이전 세션 작업 중 유효한 것
+
+| 작업 | 상태 | 비고 |
+|------|------|------|
+| kimptrade → order 마이그레이션 | ✅ 유효 | V1 코드 마이그레이션 |
+| speckit 전역 설정 | ✅ 유효 | 모든 프로젝트에서 사용 가능 |
+| .specify 템플릿 | ✅ 유효 | 스펙 작성에 활용 |
+| Git 브랜치 전략 | ✅ 유효 | feat/dashboard-migration |
+
+### 9.2 이전 세션 작업 중 레거시화된 것
+
+| 작업 | 상태 | 비고 |
+|------|------|------|
+| Playwright E2E 테스트 | 🟡 레거시 | V1용, V2 미지원 |
+| playwright.config.ts | 🟡 레거시 | baseURL 8501 |
+| package.json (npm) | 🟡 레거시 | E2E용 |
+| .github/workflows/playwright.yml | 🟡 레거시 | V1 테스트용 |
+
+### 9.3 새 세션에서 추가된 것
+
+| 작업 | 상태 | 비고 |
+|------|------|------|
+| Dashboard V2 구현 | ✅ 신규 | FastAPI + Jinja2 |
+| src/dashboard_v2/ | ✅ 신규 | V2 소스 코드 |
+| Unit/Integration 테스트 | ✅ 신규 | pytest 기반 |
+| docker-compose.dashboard-v2.yml | ✅ 신규 | V2 배포 설정 |
+| Dockerfile.dashboard-v2 | ✅ 신규 | V2 이미지 |
+
+---
+
+## 10. 권장 조치 사항
+
+### 10.1 즉시 조치 (P0)
+
+1. **E2E 테스트 업데이트 또는 제거**
+   ```bash
+   # 옵션 1: V2용으로 업데이트
+   # playwright.config.ts의 baseURL을 8502로 변경
+   # 테스트 케이스를 V2 API에 맞게 수정
+
+   # 옵션 2: E2E 테스트 제거 (Unit/Integration으로 대체)
+   rm -rf tests/e2e/
+   rm package.json package-lock.json playwright.config.ts
+   rm .github/workflows/playwright.yml
+   ```
+
+2. **V1 컨테이너 정리 (선택)**
+   ```bash
+   # 서버에서 실행
+   docker stop kimptrade-dashboard
+   docker rm kimptrade-dashboard
+   docker rmi kimptrade-dashboard
+   ```
+
+### 10.2 중기 조치 (P1)
+
+1. **V1 소스 코드 정리**
+   - `src/dashboard/` 디렉토리 제거 여부 결정
+   - 레거시 유지 또는 완전 삭제
+
+2. **CI/CD 파이프라인 정비**
+   - V2용 pytest 워크플로우 추가
+   - Playwright 워크플로우 제거 또는 V2 대응
+
+### 10.3 장기 조치 (P2)
+
+1. **문서 일원화**
+   - V1 관련 문서 아카이브
+   - V2 기준으로 문서 통일
+
+2. **PR 머지 전략**
+   - `feat/dashboard-migration` → `main` 머지 시점 결정
+   - V1/V2 혼재 상태 정리
+
+---
+
+## 11. 서버 리소스 현황
+
+### 11.1 하드웨어
+
+| 항목 | 값 |
+|------|-----|
+| CPU | 1 vCPU (Xeon Skylake) |
+| RAM | 951MB (50% 사용 중) |
+| Disk | 25GB (46% 사용 중) |
+| OS | Ubuntu 22.04.5 LTS |
+
+### 11.2 컨테이너 리소스
+
+| 컨테이너 | CPU | 메모리 | 상태 |
+|----------|-----|--------|------|
+| V2 | 0.20% | 103MB | healthy |
+| V1 | 0.00% | 145MB | healthy (미사용) |
+
+**권장**: V1 컨테이너 제거 시 약 145MB 메모리 확보 가능
+
+---
+
+## 12. 도메인 설정 (na4.pe.kr)
+
+### 12.1 현재 도메인 구성
+
+| 도메인 | 대상 | 포트 | 상태 |
+|--------|------|------|------|
+| `na4.pe.kr` | 158.247.206.2 | 8501 (V1) | 🟡 V1 연결 |
+| - | 158.247.206.2 | 8502 (V2) | ❌ 미설정 |
+
+### 12.2 DNS 설정 (추정)
+
+```
+na4.pe.kr → A Record → 158.247.206.2
+```
+
+**참고**: 현재 `na4.pe.kr:8501`은 V1(Streamlit)을 가리킴. V2(8502)용 도메인 설정 필요.
+
+### 12.3 Cloudflare Tunnel 설정 (기존 문서 기준)
+
+```
+┌──────────┐     ┌─────────────────┐     ┌───────────────────┐
+│  사용자  │────►│ Cloudflare CDN  │────►│ Cloudflare Tunnel │
+└──────────┘     │ + Zero Trust    │     │   (cloudflared)   │
+                 │ (이메일 OTP)    │     └─────────┬─────────┘
+                 └─────────────────┘               │
+                                                   ▼
+                                         ┌─────────────────────┐
+                                         │  Dashboard 서버     │
+                                         │  158.247.206.2      │
+                                         │  localhost:8501/8502│
+                                         └─────────────────────┘
+```
+
+### 12.4 서버의 cloudflared 설정 (확인 필요)
+
+```bash
+# 서버에서 확인
+ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2
+
+# cloudflared 상태 확인
+systemctl status cloudflared
+
+# 터널 설정 확인
+cat ~/.cloudflared/config.yml
+```
+
+**예상 config.yml 구조**:
+```yaml
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: na4.pe.kr        # 또는 서브도메인
+    service: http://localhost:8501   # V1 포트 → V2는 8502로 변경 필요
+  - service: http_status:404
+```
+
+### 12.5 V2 도메인 전환 작업 (TODO)
+
+1. **Cloudflare Tunnel 설정 업데이트**
+   ```bash
+   # 서버에서 실행
+   nano ~/.cloudflared/config.yml
+
+   # service를 8502로 변경
+   # service: http://localhost:8502
+
+   # cloudflared 재시작
+   systemctl restart cloudflared
+   ```
+
+2. **또는 새 서브도메인 추가**
+   ```bash
+   # 기존 V1: na4.pe.kr:8501
+   # 신규 V2: dashboard.na4.pe.kr (또는 v2.na4.pe.kr)
+
+   # ingress 추가
+   ingress:
+     - hostname: dashboard.na4.pe.kr
+       service: http://localhost:8502
+     - hostname: na4.pe.kr
+       service: http://localhost:8501   # V1 유지 (선택)
+     - service: http_status:404
+   ```
+
+3. **DNS 레코드 추가 (Cloudflare)**
+   ```bash
+   cloudflared tunnel route dns <TUNNEL_NAME> dashboard.na4.pe.kr
+   ```
+
+### 12.6 Zero Trust 설정 (Cloudflare Dashboard)
+
+| 항목 | 값 |
+|------|-----|
+| **Application** | kimptrade-dashboard |
+| **Domain** | na4.pe.kr (또는 서브도메인) |
+| **Auth Method** | One-time PIN (이메일 OTP) |
+| **Allowed Emails** | 허용된 이메일 주소 |
+| **Session Duration** | 24시간 |
+
+### 12.7 현재 접속 방법
+
+| 방법 | URL | 인증 |
+|------|-----|------|
+| **직접 IP (V2)** | http://158.247.206.2:8502 | 없음 |
+| 직접 IP (V1) | http://158.247.206.2:8501 | 없음 |
+| 도메인 (V1) | http://na4.pe.kr:8501 | Cloudflare (설정에 따라) |
+
+### 12.8 권장 도메인 구조
+
+```
+na4.pe.kr (또는 kimptrade.na4.pe.kr)
+├── / → V2 Dashboard (8502)     # 메인
+└── /v1 또는 legacy.na4.pe.kr   # V1 (선택적 유지)
+```
+
+---
+
+## 13. 네트워크 설정 (서버)
+
+### 13.1 네트워크 인터페이스
+
+| 인터페이스 | IP 주소 | 용도 |
+|-----------|---------|------|
+| `lo` | 127.0.0.1/8 | 루프백 |
+| `enp1s0` | 158.247.206.2/23 | 공인 IP (메인) |
+| `docker0` | 172.17.0.1/16 | Docker 기본 브릿지 |
+| `br-a58195ffbfaa` | 172.18.0.1/16 | kimptrade-dashboard-network (V1) |
+| `br-a975ad3515f9` | 172.19.0.1/16 | kimptrade-network (V2) |
+
+### 13.2 DNS 서버
+
+```
+nameserver 108.61.10.10    # Vultr Primary
+nameserver 9.9.9.9         # Quad9
+nameserver 2001:19f0:300:1704::6  # Vultr IPv6
+nameserver 2620:fe::fe     # Quad9 IPv6
+```
+
+### 13.3 열린 포트
+
+| 포트 | 프로토콜 | 서비스 | 바인딩 | 프로세스 |
+|------|----------|--------|--------|----------|
+| 22 | TCP | SSH | 0.0.0.0 | sshd |
+| 8501 | TCP | Dashboard V1 | 0.0.0.0 | docker-proxy |
+| 8502 | TCP | Dashboard V2 | 0.0.0.0 | docker-proxy |
+
+### 13.4 방화벽 (UFW)
+
+```
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere
+```
+
+> **참고**: 포트 8501, 8502는 UFW에 명시적으로 열려있지 않으나, Docker가 iptables를 직접 조작하여 접근 가능
+
+---
+
+## 14. Docker 상세 정보 (서버)
+
+### 14.1 Docker 버전
+
+| 컴포넌트 | 버전 |
+|----------|------|
+| **Docker Engine** | 29.1.3 |
+| **Docker Compose** | v5.0.0 |
+| **Storage Driver** | overlayfs |
+| **Cgroup Driver** | systemd (v2) |
+| **Logging Driver** | json-file |
+
+### 14.2 Docker 네트워크
+
+| 네트워크 ID | 이름 | 드라이버 | 용도 |
+|-------------|------|----------|------|
+| 5959692b2b01 | bridge | bridge | 기본 |
+| a58195ffbfaa | kimptrade-dashboard-network | bridge | V1용 |
+| a975ad3515f9 | kimptrade-network | bridge | V2용 |
+
+### 14.3 Docker 이미지
+
+| 이미지 | 태그 | 크기 | 용도 |
+|--------|------|------|------|
+| `order-dashboard-v2` | latest | **306MB** | Dashboard V2 (FastAPI) |
+| `kimptrade-dashboard` | latest | 1.15GB | Dashboard V1 (Streamlit) - 레거시 |
+
+---
+
+## 15. V2 컨테이너 상세 설정
+
+### 15.1 환경변수 (실제 서버)
+
+```bash
+SUPABASE_URL=https://shcgnkmlmjohmpeoyjlz.supabase.co
+SUPABASE_KEY=eyJhbGci...  # (anon key)
+REFRESH_INTERVAL=10
+API_TIMEOUT=10
+FEE_RATE=0.0038
+DEBUG=false
+PYTHON_VERSION=3.11.14
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+PYTHONPATH=/app
+```
+
+### 15.2 헬스체크 설정
+
+```yaml
+healthcheck:
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8502/api/health')"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 10s
+```
+
+### 15.3 헬스체크 응답 예시
+
+```json
+{
+  "status": "healthy",
+  "services": {
+    "supabase": {
+      "name": "supabase",
+      "healthy": true,
+      "latency_ms": null,
+      "error": null
+    },
+    "upbit": {
+      "name": "upbit",
+      "healthy": true,
+      "latency_ms": 85.61
+    },
+    "binance": {
+      "name": "binance",
+      "healthy": true,
+      "latency_ms": 75.98
+    }
+  },
+  "timestamp": "2025-12-17T12:39:XX"
+}
+```
+
+---
+
+## 16. 시스템 서비스 (서버)
+
+### 16.1 systemd 서비스 상태
+
+| 서비스 | 상태 | 설명 |
+|--------|------|------|
+| docker.service | running | Docker Engine |
+| containerd.service | running | Container Runtime |
+| ssh.service | running | SSH Server |
+| ufw.service | active | 방화벽 |
+| systemd-resolved.service | running | DNS Resolver |
+| systemd-timesyncd.service | running | NTP 동기화 |
+| unattended-upgrades.service | running | 자동 보안 업데이트 |
+
+---
+
+## 17. Git 상태 (서버)
+
+### 17.1 /root/order (Dashboard V2)
+
+```
+Remote: https://github.com/vsun410/trading-platform-order.git
+Branch: feat/dashboard-migration
+최신 커밋: 28d2aa3 (fix(docker): add pydantic-settings dependency)
+```
+
+### 17.2 /root/kimptrade (Dashboard V1 - 레거시)
+
+```
+상태: Git 미연결 (tar.gz에서 압축 해제됨)
+용도: V1 레거시, 업데이트 안함
+```
+
+---
+
+## 18. 관련 레포지토리 정보
+
+### 18.1 레포 분리 구조
+
+| 레포 | GitHub URL | 역할 |
+|------|-----------|------|
+| **trading-platform-order** | vsun410/trading-platform-order | Dashboard (V1, V2) |
+| **kimptrade** | vsun410/kimptrade | Backend, Collector, DB |
+
+### 18.2 kimptrade 레포 현황
+
+- **역할**: 데이터 수집, DB 마이그레이션, Backend API
+- **Collector 서버**: 64.176.229.30
+- **DB**: Supabase (shcgnkmlmjohmpeoyjlz)
+- **주요 테이블**: `kimp_1m`, `positions`, `trades`, `fx_rates`, `system_status`
+
+### 18.3 system_status 테이블 (Dashboard 의존)
+
+```sql
+-- kimptrade 레포에서 마이그레이션 실행됨
+CREATE TABLE system_status (
+    key VARCHAR(50) PRIMARY KEY,
+    value JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 초기 데이터
+INSERT INTO system_status (key, value)
+VALUES ('emergency_stop', '{"active": false}');
+```
+
+---
+
+## 19. SSH 접속 및 주요 명령어
+
+### 19.1 SSH 접속
+
+```bash
+# Dashboard 서버
+ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2
+
+# Collector 서버 (kimptrade)
+ssh -i ~/.ssh/kimptrade_vultr root@64.176.229.30
+```
+
+### 19.2 Dashboard V2 관리 명령어
+
+```bash
+# 상태 확인
+docker ps | grep dashboard-v2
+docker logs -f kimptrade-dashboard-v2
+
+# 재시작
+cd /root/order
+docker compose -f docker-compose.dashboard-v2.yml restart
+
+# 재빌드 및 재시작
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
+docker compose -f docker-compose.dashboard-v2.yml up -d
+
+# 헬스체크
+curl http://localhost:8502/api/health
+```
+
+### 19.3 코드 업데이트
+
+```bash
+cd /root/order
+git fetch origin
+git pull origin feat/dashboard-migration
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
+docker compose -f docker-compose.dashboard-v2.yml up -d
+```
+
+---
+
+## 20. 변경 이력
+
+| 날짜 | 이벤트 | 비고 |
+|------|--------|------|
+| 2025-12-17 04:42 | 서버 부팅 | - |
+| 2025-12-17 | Dashboard V1 (Streamlit) 배포 | 이전 세션 |
+| 2025-12-17 | Dashboard V2 (FastAPI) 배포 | 새 세션 |
+| 2025-12-17 | 본 문서 작성 | vultr2.md |
+
+---
+
+## 21. 결론
+
+### 13.1 현재 상태
+
+- **Dashboard V2가 정상 운영 중**
+- 이전 세션의 V1 기반 작업은 레거시화됨
+- 로컬(C:\order)과 서버(/root/order) 동기화 필요
+
+### 13.2 핵심 기억 사항
+
+```
+운영 중인 대시보드:
+├── URL: http://158.247.206.2:8502
+├── 컨테이너: kimptrade-dashboard-v2
+├── Docker: docker-compose.dashboard-v2.yml
+├── 소스: src/dashboard_v2/
+└── 헬스체크: /api/health
+
+레거시 (사용 안함):
+├── URL: http://158.247.206.2:8501
+├── 컨테이너: kimptrade-dashboard
+├── Docker: docker-compose.dashboard.yml
+├── 소스: src/dashboard/
+└── E2E 테스트: tests/e2e/
+```
+
+---
+
+**문서 끝**

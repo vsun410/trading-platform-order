@@ -1,0 +1,164 @@
+<!-- KPI Cards Component -->
+<div class="kpi-cards-grid">
+    <!-- Row 1: Main Metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <!-- Current Kimp -->
+        <div class="kpi-card kpi-card-accent" data-section="kimp">
+            <div class="kpi-label">현재 김프</div>
+            <div class="kpi-value kpi-value-lg data-value" id="kpiCurrentKimp">
+                <span class="skeleton h-8 w-20 inline-block"></span>
+            </div>
+        </div>
+
+        <!-- USD/KRW Rate -->
+        <div class="kpi-card" data-section="fx">
+            <div class="kpi-label">USD/KRW</div>
+            <div class="kpi-value data-value" id="kpiUsdKrw">
+                <span class="skeleton h-8 w-24 inline-block"></span>
+            </div>
+        </div>
+
+        <!-- Total Invested -->
+        <div class="kpi-card" data-section="position">
+            <div class="kpi-label">총 매수금액</div>
+            <div class="kpi-value data-value" id="kpiTotalInvested">
+                <span class="skeleton h-8 w-28 inline-block"></span>
+            </div>
+        </div>
+
+        <!-- Breakeven Kimp -->
+        <div class="kpi-card" data-section="pnl">
+            <div class="kpi-label">손익분기</div>
+            <div class="kpi-value data-value" id="kpiBreakevenKimp">
+                <span class="skeleton h-8 w-20 inline-block"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: PnL Details -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <!-- Entry Kimp -->
+        <div class="kpi-card" data-section="pnl">
+            <div class="kpi-label">진입 김프</div>
+            <div class="kpi-value data-value" id="kpiEntryKimp">-</div>
+        </div>
+
+        <!-- Kimp Profit -->
+        <div class="kpi-card" data-section="pnl">
+            <div class="kpi-label">김프 차익</div>
+            <div class="kpi-value data-value" id="kpiKimpProfit">-</div>
+        </div>
+
+        <!-- Net Profit -->
+        <div class="kpi-card" data-section="pnl">
+            <div class="kpi-label">순이익</div>
+            <div class="kpi-value data-value" id="kpiNetProfit">-</div>
+        </div>
+
+        <!-- Profit Status -->
+        <div class="kpi-card" data-section="pnl">
+            <div class="kpi-label">상태</div>
+            <div class="kpi-value data-value" id="kpiProfitStatus">-</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateKpiCards(data) {
+    // Update kimp data
+    if (data.kimp !== undefined) {
+        const el = document.getElementById('kpiCurrentKimp');
+        if (el) {
+            el.textContent = `${data.kimp.toFixed(2)}%`;
+            el.classList.remove('skeleton');
+        }
+    }
+
+    // Update USD/KRW
+    if (data.usd_krw !== undefined) {
+        const el = document.getElementById('kpiUsdKrw');
+        if (el) {
+            el.textContent = `₩${data.usd_krw.toLocaleString()}`;
+            el.classList.remove('skeleton');
+        }
+    }
+
+    // Update total invested
+    if (data.total_invested_krw !== undefined) {
+        const el = document.getElementById('kpiTotalInvested');
+        if (el) {
+            if (data.total_invested_krw === 0) {
+                el.textContent = '-';
+            } else {
+                el.textContent = `₩${data.total_invested_krw.toLocaleString()}`;
+            }
+            el.classList.remove('skeleton');
+        }
+    }
+
+    // Update breakeven
+    if (data.breakeven_kimp !== undefined) {
+        const el = document.getElementById('kpiBreakevenKimp');
+        if (el) {
+            if (data.breakeven_kimp === 0 || data.breakeven_kimp === null) {
+                el.textContent = '-';
+            } else {
+                el.textContent = `${data.breakeven_kimp.toFixed(2)}%`;
+            }
+            el.classList.remove('skeleton');
+        }
+    }
+
+    // Update PnL details
+    updatePnlKpis(data);
+}
+
+function updatePnlKpis(data) {
+    // Entry kimp
+    const entryEl = document.getElementById('kpiEntryKimp');
+    if (entryEl && data.entry_kimp !== undefined) {
+        entryEl.textContent = data.entry_kimp ? `${data.entry_kimp.toFixed(2)}%` : '-';
+    }
+
+    // Kimp profit
+    const profitEl = document.getElementById('kpiKimpProfit');
+    if (profitEl && data.kimp_profit !== undefined) {
+        if (data.kimp_profit !== null) {
+            const sign = data.kimp_profit >= 0 ? '+' : '';
+            profitEl.textContent = `${sign}${data.kimp_profit.toFixed(2)}%`;
+            profitEl.classList.toggle('profit', data.kimp_profit >= 0);
+            profitEl.classList.toggle('loss', data.kimp_profit < 0);
+        } else {
+            profitEl.textContent = '-';
+        }
+    }
+
+    // Net profit
+    const netEl = document.getElementById('kpiNetProfit');
+    if (netEl && data.net_profit !== undefined) {
+        if (data.net_profit !== null) {
+            const sign = data.net_profit >= 0 ? '+' : '';
+            netEl.textContent = `${sign}${data.net_profit.toFixed(2)}%`;
+            netEl.classList.toggle('profit', data.net_profit >= 0);
+            netEl.classList.toggle('loss', data.net_profit < 0);
+        } else {
+            netEl.textContent = '-';
+        }
+    }
+
+    // Profit status
+    const statusEl = document.getElementById('kpiProfitStatus');
+    if (statusEl && data.is_profitable !== undefined) {
+        if (data.is_profitable === null) {
+            statusEl.textContent = '-';
+            statusEl.className = 'kpi-value data-value';
+        } else if (data.is_profitable) {
+            statusEl.textContent = '수익 구간';
+            statusEl.className = 'kpi-value data-value profit';
+        } else {
+            statusEl.textContent = '손실 구간';
+            statusEl.className = 'kpi-value data-value loss';
+        }
+    }
+}
+</script>

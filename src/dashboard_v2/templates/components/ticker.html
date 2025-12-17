@@ -1,0 +1,174 @@
+<!-- Ticker Marquee Component -->
+<div class="ticker-wrap py-2" id="tickerWrap">
+    <div class="ticker-content" id="tickerContent">
+        <!-- Ticker items will be populated by JS -->
+        <span class="ticker-item">
+            <span class="ticker-label">BTC/KRW</span>
+            <span class="ticker-value" id="tickerBtcKrw">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">BTC/USDT</span>
+            <span class="ticker-value" id="tickerBtcUsdt">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">ETH/KRW</span>
+            <span class="ticker-value" id="tickerEthKrw">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">ETH/USDT</span>
+            <span class="ticker-value" id="tickerEthUsdt">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">USD/KRW</span>
+            <span class="ticker-value" id="tickerUsdKrw">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item ticker-highlight">
+            <span class="ticker-label">KIMP</span>
+            <span class="ticker-value" id="tickerKimp">---</span>
+            <span class="ticker-change" id="tickerKimpChange"></span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <!-- Duplicate for seamless loop -->
+        <span class="ticker-item">
+            <span class="ticker-label">BTC/KRW</span>
+            <span class="ticker-value" id="tickerBtcKrw2">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">BTC/USDT</span>
+            <span class="ticker-value" id="tickerBtcUsdt2">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">ETH/KRW</span>
+            <span class="ticker-value" id="tickerEthKrw2">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">ETH/USDT</span>
+            <span class="ticker-value" id="tickerEthUsdt2">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item">
+            <span class="ticker-label">USD/KRW</span>
+            <span class="ticker-value" id="tickerUsdKrw2">---</span>
+        </span>
+        <span class="ticker-separator">|</span>
+        <span class="ticker-item ticker-highlight">
+            <span class="ticker-label">KIMP</span>
+            <span class="ticker-value" id="tickerKimp2">---</span>
+            <span class="ticker-change" id="tickerKimpChange2"></span>
+        </span>
+        <span class="ticker-separator">|</span>
+    </div>
+</div>
+
+<style>
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+}
+
+.ticker-label {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+
+.ticker-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.ticker-separator {
+    opacity: 0.3;
+    padding: 0 0.5rem;
+}
+
+.ticker-highlight .ticker-value {
+    color: #84CC16;
+    font-size: 1rem;
+}
+
+.ticker-change {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+}
+
+.ticker-change.positive {
+    color: #22C55E;
+}
+
+.ticker-change.negative {
+    color: #EF4444;
+}
+
+/* Pause animation on hover */
+.ticker-wrap:hover .ticker-content {
+    animation-play-state: paused;
+}
+</style>
+
+<script>
+function updateTickerDisplay(data) {
+    if (!data) return;
+
+    // Update both sets of ticker values (for seamless loop)
+    const fields = ['BtcKrw', 'BtcUsdt', 'EthKrw', 'EthUsdt', 'UsdKrw', 'Kimp'];
+    const dataKeys = ['btc_krw', 'btc_usdt', 'eth_krw', 'eth_usdt', 'usd_krw', 'kimp'];
+
+    fields.forEach((field, i) => {
+        const value = data[dataKeys[i]] || '---';
+
+        // Update primary ticker
+        const el1 = document.getElementById(`ticker${field}`);
+        if (el1) el1.textContent = value;
+
+        // Update duplicate ticker
+        const el2 = document.getElementById(`ticker${field}2`);
+        if (el2) el2.textContent = value;
+    });
+
+    // Update kimp change indicator
+    const change = data.kimp_change;
+    if (change !== null && change !== undefined) {
+        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+        const changeClass = change >= 0 ? 'positive' : 'negative';
+
+        ['tickerKimpChange', 'tickerKimpChange2'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = changeText;
+                el.className = `ticker-change ${changeClass}`;
+            }
+        });
+    }
+}
+
+// Fetch ticker data
+async function fetchTickerData() {
+    try {
+        const response = await fetch('/api/ticker');
+        if (response.ok) {
+            const data = await response.json();
+            updateTickerDisplay(data);
+        }
+    } catch (error) {
+        console.error('Failed to fetch ticker data:', error);
+    }
+}
+
+// Initial fetch and periodic update
+document.addEventListener('DOMContentLoaded', function() {
+    fetchTickerData();
+    // Update ticker every 10 seconds
+    setInterval(fetchTickerData, 10000);
+});
+</script>

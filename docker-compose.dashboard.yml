@@ -1,0 +1,41 @@
+# ═══════════════════════════════════════════════════════════════
+# KimpTrade Dashboard - 별도 서버 배포용
+#
+# 사용법:
+#   docker compose -f docker-compose.dashboard.yml build
+#   docker compose -f docker-compose.dashboard.yml up -d
+#
+# 주의: 이 파일은 Dashboard 전용 서버에서만 사용합니다.
+#       Collector 서버에서는 docker-compose.yml을 사용하세요.
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: kimptrade-dashboard
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8501:8501"  # localhost만 바인딩 (Cloudflare Tunnel 통해 접근)
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  default:
+    name: kimptrade-dashboard-network

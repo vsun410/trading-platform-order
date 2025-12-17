@@ -1,0 +1,95 @@
+<!-- Sidebar Navigation Component -->
+<aside class="sidebar w-64 hidden md:block">
+    <!-- Logo/Brand -->
+    <div class="p-4 border-b-2 border-black">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-lime-500 border-2 border-black flex items-center justify-center">
+                <span class="font-bold text-black">K</span>
+            </div>
+            <span class="font-bold text-lg tracking-tight">KimpTrade</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="p-2">
+        <a href="/" class="sidebar-nav-item active">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+            <span>대시보드</span>
+        </a>
+        <a href="/positions" class="sidebar-nav-item">
+            <i data-lucide="wallet" class="w-5 h-5 mr-3"></i>
+            <span>포지션</span>
+        </a>
+        <a href="/trades" class="sidebar-nav-item">
+            <i data-lucide="history" class="w-5 h-5 mr-3"></i>
+            <span>거래 내역</span>
+        </a>
+        <a href="/settings" class="sidebar-nav-item">
+            <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
+            <span>설정</span>
+        </a>
+    </nav>
+
+    <!-- System Status Summary -->
+    <div class="absolute bottom-0 left-0 w-64 p-4 border-t-2 border-black">
+        <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2">
+                <span class="status-dot status-dot-green" id="sidebarStatusDot"></span>
+                <span class="text-gray-600">시스템 정상</span>
+            </div>
+            <span class="text-gray-400 text-xs" id="sidebarLastUpdate">-</span>
+        </div>
+    </div>
+</aside>
+
+<!-- Mobile Navigation Toggle -->
+<div class="md:hidden fixed bottom-4 right-4 z-50">
+    <button id="mobileNavToggle" class="neo-btn p-3 rounded-full" onclick="toggleMobileNav()">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+</div>
+
+<!-- Mobile Navigation Overlay -->
+<div id="mobileNavOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden">
+    <aside class="sidebar w-64 h-full">
+        <!-- Logo/Brand -->
+        <div class="p-4 border-b-2 border-black flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-lime-500 border-2 border-black flex items-center justify-center">
+                    <span class="font-bold text-black">K</span>
+                </div>
+                <span class="font-bold text-lg tracking-tight">KimpTrade</span>
+            </div>
+            <button onclick="toggleMobileNav()" class="p-1">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="p-2">
+            <a href="/" class="sidebar-nav-item active">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+                <span>대시보드</span>
+            </a>
+            <a href="/positions" class="sidebar-nav-item">
+                <i data-lucide="wallet" class="w-5 h-5 mr-3"></i>
+                <span>포지션</span>
+            </a>
+            <a href="/trades" class="sidebar-nav-item">
+                <i data-lucide="history" class="w-5 h-5 mr-3"></i>
+                <span>거래 내역</span>
+            </a>
+            <a href="/settings" class="sidebar-nav-item">
+                <i data-lucide="settings" class="w-5 h-5 mr-3"></i>
+                <span>설정</span>
+            </a>
+        </nav>
+    </aside>
+</div>
+
+<script>
+function toggleMobileNav() {
+    const overlay = document.getElementById('mobileNavOverlay');
+    overlay.classList.toggle('hidden');
+}
+</script>

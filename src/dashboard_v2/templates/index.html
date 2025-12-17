@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title | default('KimpTrade Dashboard') }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <!-- Section Label -->
+    <div class="mb-4">
+        <span class="section-label">Dashboard</span>
+    </div>
+
+    <!-- Main Grid Layout: Left Content + Right Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Left Content (3 columns) -->
+        <div class="lg:col-span-3 space-y-6">
+            <!-- KPI Cards Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpiCards">
+                <!-- Kimp Rate Card -->
+                <div class="kpi-card kpi-card-accent" data-section="kimp">
+                    <div class="kpi-label">현재 김프</div>
+                    <div class="kpi-value kpi-value-lg data-value" id="currentKimp">
+                        <span class="skeleton h-8 w-20 inline-block"></span>
+                    </div>
+                </div>
+
+                <!-- USD/KRW Rate Card -->
+                <div class="kpi-card" data-section="fx">
+                    <div class="kpi-label">USD/KRW</div>
+                    <div class="kpi-value data-value" id="usdKrw">
+                        <span class="skeleton h-8 w-24 inline-block"></span>
+                    </div>
+                </div>
+
+                <!-- Total Invested Card -->
+                <div class="kpi-card" data-section="position">
+                    <div class="kpi-label">총 매수금액</div>
+                    <div class="kpi-value data-value" id="totalInvested">
+                        <span class="skeleton h-8 w-28 inline-block"></span>
+                    </div>
+                </div>
+
+                <!-- Breakeven Card -->
+                <div class="kpi-card" data-section="pnl">
+                    <div class="kpi-label">손익분기</div>
+                    <div class="kpi-value data-value" id="breakevenKimp">
+                        <span class="skeleton h-8 w-20 inline-block"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Row: PnL Summary -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="pnlCards">
+                <!-- Entry Kimp -->
+                <div class="kpi-card" data-section="pnl">
+                    <div class="kpi-label">진입 김프</div>
+                    <div class="kpi-value data-value" id="entryKimp">-</div>
+                </div>
+
+                <!-- Kimp Profit -->
+                <div class="kpi-card" data-section="pnl">
+                    <div class="kpi-label">김프 차익</div>
+                    <div class="kpi-value data-value" id="kimpProfit">-</div>
+                </div>
+
+                <!-- Net Profit -->
+                <div class="kpi-card" data-section="pnl">
+                    <div class="kpi-label">순이익</div>
+                    <div class="kpi-value data-value" id="netProfit">-</div>
+                </div>
+
+                <!-- Profit Status -->
+                <div class="kpi-card" data-section="pnl">
+                    <div class="kpi-label">상태</div>
+                    <div class="kpi-value data-value" id="profitStatus">-</div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            {% include "components/chart.html" %}
+
+            <!-- Positions Table -->
+            <div class="neo-box p-4" id="positionsSection">
+                <span class="section-label mb-4 inline-block">포지션</span>
+                <div id="positionsTable">
+                    {% include "partials/loading.html" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar (1 column) -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Control Panel -->
+            {% include "components/control_panel.html" %}
+
+            <!-- System Logs -->
+            {% include "components/system_logs.html" %}
+        </div>
+    </div>
+</div>
+
+<!-- Error Display -->
+{% include "partials/error.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize dashboard with server-provided refresh interval
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboard(REFRESH_INTERVAL);
+    });
+</script>
+{% endblock %}

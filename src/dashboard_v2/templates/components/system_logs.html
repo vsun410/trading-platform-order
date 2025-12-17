@@ -1,0 +1,197 @@
+<!-- System Logs Component -->
+<div class="neo-box p-4" id="systemLogsSection">
+    <div class="flex justify-between items-center mb-4">
+        <span class="section-label">시스템 상태</span>
+        <button class="text-xs text-gray-500 hover:text-black" onclick="refreshSystemStatus()">
+            <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i>
+        </button>
+    </div>
+
+    <!-- Service Status Grid -->
+    <div class="grid grid-cols-2 gap-3 mb-4" id="serviceStatusGrid">
+        <!-- Upbit Status -->
+        <div class="flex items-center gap-2 p-2 border border-gray-200">
+            <span class="status-dot status-dot-yellow" id="upbitStatusDot"></span>
+            <div class="flex-1">
+                <span class="text-sm font-medium">Upbit API</span>
+                <p class="text-xs text-gray-500" id="upbitLatency">-</p>
+            </div>
+        </div>
+
+        <!-- Binance Status -->
+        <div class="flex items-center gap-2 p-2 border border-gray-200">
+            <span class="status-dot status-dot-yellow" id="binanceStatusDot"></span>
+            <div class="flex-1">
+                <span class="text-sm font-medium">Binance API</span>
+                <p class="text-xs text-gray-500" id="binanceLatency">-</p>
+            </div>
+        </div>
+
+        <!-- Supabase Status -->
+        <div class="flex items-center gap-2 p-2 border border-gray-200">
+            <span class="status-dot status-dot-yellow" id="supabaseStatusDot"></span>
+            <div class="flex-1">
+                <span class="text-sm font-medium">Supabase</span>
+                <p class="text-xs text-gray-500" id="supabaseLatency">-</p>
+            </div>
+        </div>
+
+        <!-- Worker Status -->
+        <div class="flex items-center gap-2 p-2 border border-gray-200">
+            <span class="status-dot status-dot-yellow" id="workerStatusDot"></span>
+            <div class="flex-1">
+                <span class="text-sm font-medium">Worker</span>
+                <p class="text-xs text-gray-500" id="workerLastRun">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Logs -->
+    <div class="border-t border-gray-200 pt-4">
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-semibold">최근 로그</span>
+            <select id="logFilter" class="text-xs border border-gray-300 px-2 py-1" onchange="filterLogs(this.value)">
+                <option value="all">전체</option>
+                <option value="error">오류</option>
+                <option value="warn">경고</option>
+                <option value="info">정보</option>
+            </select>
+        </div>
+
+        <!-- Log List -->
+        <div class="max-h-48 overflow-y-auto" id="logList">
+            <div class="text-sm text-gray-500 p-2 text-center">로그를 불러오는 중...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateSystemStatus(healthData) {
+    if (!healthData) return;
+
+    // Update each service status
+    const services = ['upbit', 'binance', 'supabase', 'worker'];
+
+    services.forEach(service => {
+        const status = healthData[service];
+        if (!status) return;
+
+        const dotElement = document.getElementById(`${service}StatusDot`);
+        const latencyElement = document.getElementById(`${service}Latency`) ||
+                              document.getElementById(`${service}LastRun`);
+
+        if (dotElement) {
+            dotElement.className = 'status-dot';
+            if (status.status === 'healthy' || status.status === 'ok') {
+                dotElement.classList.add('status-dot-green');
+            } else if (status.status === 'degraded') {
+                dotElement.classList.add('status-dot-yellow');
+            } else {
+                dotElement.classList.add('status-dot-red');
+            }
+        }
+
+        if (latencyElement) {
+            if (status.latency_ms !== undefined) {
+                latencyElement.textContent = `${status.latency_ms}ms`;
+            } else if (status.last_run) {
+                latencyElement.textContent = formatTimeAgo(status.last_run);
+            } else {
+                latencyElement.textContent = status.status || '-';
+            }
+        }
+    });
+
+    // Update sidebar status dot
+    const sidebarDot = document.getElementById('sidebarStatusDot');
+    if (sidebarDot) {
+        const allHealthy = services.every(s => {
+            const status = healthData[s];
+            return status && (status.status === 'healthy' || status.status === 'ok');
+        });
+
+        sidebarDot.className = 'status-dot ' + (allHealthy ? 'status-dot-green' : 'status-dot-yellow');
+    }
+
+    // Update sidebar timestamp
+    const sidebarUpdate = document.getElementById('sidebarLastUpdate');
+    if (sidebarUpdate) {
+        sidebarUpdate.textContent = new Date().toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+}
+
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now - then;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return '방금 전';
+    if (diffMins < 60) return `${diffMins}분 전`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}시간 전`;
+
+    return then.toLocaleDateString('ko-KR');
+}
+
+function updateLogList(logs) {
+    const logList = document.getElementById('logList');
+    if (!logs || logs.length === 0) {
+        logList.innerHTML = '<div class="text-sm text-gray-500 p-2 text-center">로그가 없습니다</div>';
+        return;
+    }
+
+    const html = logs.map(log => {
+        const levelClass = {
+            'error': 'text-red-600 bg-red-50',
+            'warn': 'text-yellow-600 bg-yellow-50',
+            'info': 'text-blue-600 bg-blue-50'
+        }[log.level] || 'text-gray-600 bg-gray-50';
+
+        const time = new Date(log.timestamp).toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        return `
+            <div class="flex items-start gap-2 p-2 border-b border-gray-100 text-xs ${levelClass}">
+                <span class="font-mono text-gray-400 shrink-0">${time}</span>
+                <span class="uppercase font-bold w-12">${log.level}</span>
+                <span class="flex-1 truncate" title="${log.message}">${log.message}</span>
+            </div>
+        `;
+    }).join('');
+
+    logList.innerHTML = html;
+}
+
+async function refreshSystemStatus() {
+    try {
+        const response = await fetch('/api/health');
+        if (response.ok) {
+            const data = await response.json();
+            updateSystemStatus(data);
+        }
+    } catch (error) {
+        console.error('Failed to refresh system status:', error);
+    }
+}
+
+function filterLogs(level) {
+    // TODO: Implement log filtering
+    console.log('Filter logs by:', level);
+}
+
+// Mock log data for initial display
+document.addEventListener('DOMContentLoaded', function() {
+    updateLogList([
+        { level: 'info', timestamp: new Date().toISOString(), message: '대시보드 시작됨' },
+        { level: 'info', timestamp: new Date(Date.now() - 60000).toISOString(), message: '김프 데이터 갱신 완료' },
+    ]);
+});
+</script>

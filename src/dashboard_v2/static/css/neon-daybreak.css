@@ -1,0 +1,326 @@
+/* Neon Daybreak Design System
+ * Neo-brutalism style with hard shadows, lime green accents, and sharp corners.
+ *
+ * Colors:
+ * - Background: #F3F4F6 (light gray)
+ * - Surface: #FFFFFF (white)
+ * - Border: #000000 (black, 2px solid)
+ * - Accent: #84CC16 (lime green)
+ * - Danger: #EF4444 (red)
+ * - Shadow: 4px 4px 0px #000000 (hard shadow)
+ */
+
+:root {
+    --bg-primary: #F3F4F6;
+    --bg-surface: #FFFFFF;
+    --border-color: #000000;
+    --accent-lime: #84CC16;
+    --accent-lime-dark: #65A30D;
+    --danger-red: #EF4444;
+    --danger-red-dark: #DC2626;
+    --shadow-hard: 4px 4px 0px #000000;
+    --shadow-hard-sm: 2px 2px 0px #000000;
+    --font-heading: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Base styles */
+body {
+    font-family: var(--font-heading);
+    background-color: var(--bg-primary);
+}
+
+/* Neo-box: Card component with hard shadow */
+.neo-box {
+    background-color: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-hard);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.neo-box:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000000;
+}
+
+/* Neo-button: Button with press effect */
+.neo-btn {
+    background-color: var(--accent-lime);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-hard-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    cursor: pointer;
+}
+
+.neo-btn:hover {
+    background-color: var(--accent-lime-dark);
+}
+
+.neo-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.neo-btn-danger {
+    background-color: var(--danger-red);
+    color: white;
+}
+
+.neo-btn-danger:hover {
+    background-color: var(--danger-red-dark);
+}
+
+/* Section label: Black tab header */
+.section-label {
+    background-color: var(--border-color);
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.75rem;
+    display: inline-block;
+}
+
+/* Ticker wrapper: Marquee animation */
+.ticker-wrap {
+    background-color: var(--border-color);
+    color: var(--accent-lime);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.ticker-content {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+}
+
+@keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Data display with mono font */
+.data-value {
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+/* KPI Card */
+.kpi-card {
+    background-color: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    box-shadow: var(--shadow-hard);
+    padding: 1rem;
+}
+
+.kpi-card-accent {
+    border-left: 4px solid var(--accent-lime);
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6B7280;
+}
+
+.kpi-value {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--border-color);
+}
+
+.kpi-value-lg {
+    font-size: 2rem;
+}
+
+/* Profit/Loss colors */
+.profit {
+    color: #16A34A;
+}
+
+.loss {
+    color: var(--danger-red);
+}
+
+/* Loading skeleton */
+.skeleton {
+    background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Error state */
+.error-state {
+    border-color: var(--danger-red);
+    background-color: #FEF2F2;
+}
+
+/* Status indicators */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot-green {
+    background-color: #16A34A;
+}
+
+.status-dot-red {
+    background-color: var(--danger-red);
+}
+
+.status-dot-yellow {
+    background-color: #EAB308;
+}
+
+/* Mobile responsive - 320px to 768px */
+@media (max-width: 768px) {
+    .neo-box {
+        box-shadow: var(--shadow-hard-sm);
+    }
+
+    .neo-box:hover {
+        transform: none;
+        box-shadow: var(--shadow-hard-sm);
+    }
+
+    .kpi-value {
+        font-size: 1.25rem;
+    }
+
+    .kpi-value-lg {
+        font-size: 1.5rem;
+    }
+
+    /* Sidebar hidden on mobile */
+    .sidebar {
+        display: none;
+    }
+
+    /* Full width main content on mobile */
+    main {
+        padding: 0.75rem;
+    }
+
+    /* Stack KPI cards on small screens */
+    .kpi-card {
+        padding: 0.75rem;
+    }
+
+    .kpi-label {
+        font-size: 0.65rem;
+    }
+
+    /* Chart adjustments */
+    #chartSection .h-64 {
+        height: 200px;
+    }
+
+    /* Control panel compact */
+    #controlPanel .neo-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Small mobile screens - 320px */
+@media (max-width: 480px) {
+    .kpi-value {
+        font-size: 1rem;
+    }
+
+    .kpi-value-lg {
+        font-size: 1.25rem;
+    }
+
+    .section-label {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    /* Stack elements vertically */
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+
+    /* Smaller padding */
+    .neo-box {
+        padding: 0.5rem;
+    }
+
+    /* Compact table */
+    .neo-table th,
+    .neo-table td {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Sidebar styles */
+.sidebar {
+    background-color: var(--bg-surface);
+    border-right: 2px solid var(--border-color);
+    min-height: 100vh;
+}
+
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E5E7EB;
+    transition: background-color 0.1s ease;
+}
+
+.sidebar-nav-item:hover {
+    background-color: var(--bg-primary);
+}
+
+.sidebar-nav-item.active {
+    background-color: var(--accent-lime);
+    font-weight: 600;
+}
+
+/* Table styles */
+.neo-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.neo-table th,
+.neo-table td {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.neo-table th {
+    background-color: var(--border-color);
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.neo-table td {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+}
+
+.neo-table tr:hover {
+    background-color: var(--bg-primary);
+}

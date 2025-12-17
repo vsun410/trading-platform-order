@@ -1,0 +1,42 @@
+# Dockerfile for Dashboard V2
+# FastAPI + Jinja2 with uvicorn runtime
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Install Python dependencies directly (no package build needed)
+RUN pip install --no-cache-dir \
+    fastapi>=0.104.0 \
+    uvicorn>=0.24.0 \
+    jinja2>=3.1.0 \
+    python-multipart>=0.0.6 \
+    supabase>=2.0.0 \
+    pydantic>=2.0.0 \
+    pydantic-settings>=2.0.0 \
+    loguru>=0.7.0 \
+    python-dotenv>=1.0.0
+
+# Copy application code
+COPY src/dashboard_v2 ./src/dashboard_v2
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Expose port
+EXPOSE 8502
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8502/api/health')" || exit 1
+
+# Run uvicorn server
+CMD ["python", "-m", "uvicorn", "src.dashboard_v2.main:app", "--host", "0.0.0.0", "--port", "8502"]

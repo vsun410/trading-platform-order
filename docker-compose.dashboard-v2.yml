@@ -1,0 +1,46 @@
+# Docker Compose for Dashboard V2
+# Run: docker compose -f docker-compose.dashboard-v2.yml up -d
+
+version: "3.8"
+
+services:
+  dashboard-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard-v2
+    container_name: kimptrade-dashboard-v2
+    restart: unless-stopped
+    ports:
+      - "8502:8502"
+    environment:
+      # Supabase Configuration
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+
+      # Dashboard Settings
+      - REFRESH_INTERVAL=${REFRESH_INTERVAL:-10}
+      - API_TIMEOUT=${API_TIMEOUT:-10}
+      - FEE_RATE=${FEE_RATE:-0.0038}
+
+      # Debug mode (disable in production)
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      # Mount static files for hot-reload during development
+      - ./src/dashboard_v2/static:/app/src/dashboard_v2/static:ro
+      - ./src/dashboard_v2/templates:/app/src/dashboard_v2/templates:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8502/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - kimptrade-network
+    labels:
+      - "com.kimptrade.service=dashboard-v2"
+      - "com.kimptrade.version=2.0.0"
+
+networks:
+  kimptrade-network:
+    name: kimptrade-network
+    driver: bridge
