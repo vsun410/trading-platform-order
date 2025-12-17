@@ -15,6 +15,23 @@ dependencies = [
     "pydantic>=2.0.0",
     "httpx>=0.25.0",
     "aiohttp>=3.9.0",
+    # Dashboard V2 dependencies
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+]
+dashboard = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
 ]
 
 [build-system]

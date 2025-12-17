@@ -32,6 +32,7 @@
 | **V. Simplicity** | PASS | FastAPI 단일 앱, 기존 Supabase 재사용, 복잡한 프레임워크 없음 |
 | **VI. TDD Cycle** | PASS | API 엔드포인트, 계산 로직 테스트 작성 |
 | **VII. GitHub First** | PASS | 작업 완료 즉시 커밋/푸시 |
+| **VIII. No Hardcoding** | PASS | FEE_RATE, SUPABASE_URL 등 모든 설정값 config.py/환경변수로 관리 |
 
 **Gate Result**: PASS - 모든 원칙 준수
 

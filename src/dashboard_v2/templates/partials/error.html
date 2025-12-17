@@ -1,0 +1,73 @@
+<!-- Error Display Component -->
+<div class="error-container neo-box error-state p-6 text-center" id="errorContainer" style="display: none;">
+    <div class="flex flex-col items-center">
+        <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">데이터 로딩 실패</h3>
+        <p class="text-gray-600 mb-4" id="errorMessage">서버와의 연결에 문제가 발생했습니다.</p>
+        <button
+            class="neo-btn px-6 py-2"
+            onclick="retryFetch()"
+            id="retryButton"
+        >
+            <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+            다시 시도
+        </button>
+    </div>
+</div>
+
+<!-- Section-level Error Component -->
+<template id="sectionErrorTemplate">
+    <div class="section-error bg-red-50 border border-red-200 rounded p-4">
+        <div class="flex items-center">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i>
+            <span class="text-red-700 text-sm">이 섹션을 로드할 수 없습니다</span>
+            <button class="ml-auto text-red-600 hover:text-red-800 text-sm underline" onclick="retrySectionFetch(this)">
+                재시도
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+function showError(message) {
+    const container = document.getElementById('errorContainer');
+    const messageEl = document.getElementById('errorMessage');
+    if (container && messageEl) {
+        messageEl.textContent = message || '서버와의 연결에 문제가 발생했습니다.';
+        container.style.display = 'block';
+        lucide.createIcons();
+    }
+}
+
+function hideError() {
+    const container = document.getElementById('errorContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+}
+
+function retryFetch() {
+    hideError();
+    if (typeof refreshAllData === 'function') {
+        refreshAllData();
+    }
+}
+
+function showSectionError(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        const template = document.getElementById('sectionErrorTemplate');
+        const clone = template.content.cloneNode(true);
+        section.innerHTML = '';
+        section.appendChild(clone);
+        lucide.createIcons();
+    }
+}
+
+function retrySectionFetch(button) {
+    const section = button.closest('[data-section]');
+    if (section && typeof refreshSection === 'function') {
+        refreshSection(section.dataset.section);
+    }
+}
+</script>

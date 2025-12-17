@@ -1,0 +1,36 @@
+<!-- Loading Skeleton Component -->
+<div class="loading-skeleton">
+    <!-- KPI Cards Skeleton -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {% for i in range(4) %}
+        <div class="kpi-card">
+            <div class="skeleton h-4 w-20 mb-2 rounded"></div>
+            <div class="skeleton h-8 w-32 rounded"></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Chart Skeleton -->
+    <div class="neo-box p-4 mb-6">
+        <div class="skeleton h-6 w-32 mb-4 rounded"></div>
+        <div class="skeleton h-64 w-full rounded"></div>
+    </div>
+
+    <!-- Table Skeleton -->
+    <div class="neo-box p-4">
+        <div class="skeleton h-6 w-40 mb-4 rounded"></div>
+        <div class="space-y-2">
+            {% for i in range(5) %}
+            <div class="skeleton h-10 w-full rounded"></div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div class="loading-spinner hidden" id="loadingSpinner">
+    <div class="flex items-center justify-center p-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-lime-500"></div>
+        <span class="ml-3 text-gray-600">데이터 로딩 중...</span>
+    </div>
+</div>

@@ -1,0 +1,181 @@
+<!-- Control Panel Component with Emergency Stop -->
+<div class="neo-box p-4" id="controlPanel">
+    <span class="section-label mb-4 inline-block">제어판</span>
+
+    <!-- Emergency Stop Button -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold">비상 정지</span>
+            <span class="text-xs text-gray-500" id="emergencyStatus">비활성</span>
+        </div>
+        <button
+            id="emergencyStopBtn"
+            class="neo-btn neo-btn-danger w-full py-3 flex items-center justify-center gap-2"
+            onclick="toggleEmergencyStop()"
+        >
+            <i data-lucide="octagon" class="w-5 h-5"></i>
+            <span id="emergencyBtnText">비상 정지 활성화</span>
+        </button>
+        <p class="text-xs text-gray-500 mt-2">
+            비상 정지 활성화 시 모든 자동 매매가 중단됩니다.
+        </p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="border-t-2 border-black pt-4">
+        <span class="text-sm font-semibold mb-3 block">빠른 작업</span>
+        <div class="grid grid-cols-2 gap-2">
+            <button class="neo-btn py-2 text-sm" onclick="refreshAllData()">
+                <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i>
+                새로고침
+            </button>
+            <button class="neo-btn py-2 text-sm" onclick="exportData()">
+                <i data-lucide="download" class="w-4 h-4 inline mr-1"></i>
+                데이터 내보내기
+            </button>
+        </div>
+    </div>
+
+    <!-- Trading Mode -->
+    <div class="border-t-2 border-black pt-4 mt-4">
+        <span class="text-sm font-semibold mb-3 block">거래 모드</span>
+        <div class="flex items-center gap-2">
+            <div class="flex-1 p-2 border-2 border-black bg-gray-100 text-center text-sm" id="tradingModeDisplay">
+                자동
+            </div>
+            <button class="neo-btn py-2 px-3 text-sm" onclick="toggleTradingMode()">
+                전환
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Emergency Stop Confirmation Modal -->
+<div id="emergencyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="neo-box p-6 max-w-md mx-4">
+        <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+            <span class="text-lg font-bold">비상 정지 확인</span>
+        </div>
+        <p class="text-sm text-gray-600 mb-6">
+            비상 정지를 활성화하면 모든 자동 매매가 즉시 중단됩니다.
+            진행 중인 주문도 취소될 수 있습니다. 계속하시겠습니까?
+        </p>
+        <div class="flex gap-2">
+            <button class="neo-btn flex-1 py-2" onclick="closeEmergencyModal()">
+                취소
+            </button>
+            <button class="neo-btn neo-btn-danger flex-1 py-2" onclick="confirmEmergencyStop()">
+                확인
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let isEmergencyActive = false;
+
+function toggleEmergencyStop() {
+    if (!isEmergencyActive) {
+        // Show confirmation modal before activating
+        document.getElementById('emergencyModal').classList.remove('hidden');
+    } else {
+        // Deactivate directly
+        deactivateEmergencyStop();
+    }
+}
+
+function closeEmergencyModal() {
+    document.getElementById('emergencyModal').classList.add('hidden');
+}
+
+async function confirmEmergencyStop() {
+    closeEmergencyModal();
+
+    try {
+        const response = await fetch('/api/emergency/activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            setEmergencyActive(true);
+        } else {
+            alert('비상 정지 활성화에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('Emergency stop activation failed:', error);
+        alert('비상 정지 활성화 중 오류가 발생했습니다.');
+    }
+}
+
+async function deactivateEmergencyStop() {
+    try {
+        const response = await fetch('/api/emergency/deactivate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            setEmergencyActive(false);
+        } else {
+            alert('비상 정지 해제에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('Emergency stop deactivation failed:', error);
+        alert('비상 정지 해제 중 오류가 발생했습니다.');
+    }
+}
+
+function setEmergencyActive(active) {
+    isEmergencyActive = active;
+    const btn = document.getElementById('emergencyStopBtn');
+    const btnText = document.getElementById('emergencyBtnText');
+    const status = document.getElementById('emergencyStatus');
+
+    if (active) {
+        btn.classList.add('animate-pulse');
+        btnText.textContent = '비상 정지 해제';
+        status.textContent = '활성 (모든 거래 중단)';
+        status.classList.add('text-red-500', 'font-bold');
+    } else {
+        btn.classList.remove('animate-pulse');
+        btnText.textContent = '비상 정지 활성화';
+        status.textContent = '비활성';
+        status.classList.remove('text-red-500', 'font-bold');
+    }
+}
+
+function refreshAllData() {
+    if (typeof loadAllData === 'function') {
+        loadAllData();
+    } else {
+        window.location.reload();
+    }
+}
+
+function exportData() {
+    // TODO: Implement data export
+    alert('데이터 내보내기 기능은 준비 중입니다.');
+}
+
+function toggleTradingMode() {
+    // TODO: Implement trading mode toggle
+    alert('거래 모드 전환 기능은 준비 중입니다.');
+}
+
+// Check emergency status on load
+async function checkEmergencyStatus() {
+    try {
+        const response = await fetch('/api/emergency/status');
+        if (response.ok) {
+            const data = await response.json();
+            setEmergencyActive(data.active);
+        }
+    } catch (error) {
+        console.error('Failed to check emergency status:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkEmergencyStatus);
+</script>

@@ -19,15 +19,15 @@
 
 **Purpose**: FastAPI 대시보드 모듈 기본 구조 및 의존성 설정
 
-- [ ] T001 Create dashboard_v2 directory structure per plan.md (src/dashboard_v2/, routers/, services/, models/, templates/, static/)
-- [ ] T002 Add FastAPI, Jinja2, uvicorn dependencies to requirements.txt
-- [ ] T003 [P] Create src/dashboard_v2/__init__.py
-- [ ] T004 [P] Create src/dashboard_v2/routers/__init__.py
-- [ ] T005 [P] Create src/dashboard_v2/services/__init__.py
-- [ ] T006 [P] Create src/dashboard_v2/models/__init__.py
-- [ ] T007 [P] Create tests/unit/test_pnl_service.py (empty file)
-- [ ] T008 [P] Create tests/unit/test_position_service.py (empty file)
-- [ ] T009 [P] Create tests/integration/test_dashboard_api.py (empty file)
+- [x] T001 Create dashboard_v2 directory structure per plan.md (src/dashboard_v2/, routers/, services/, models/, templates/, static/)
+- [x] T002 Add FastAPI, Jinja2, uvicorn dependencies to requirements.txt
+- [x] T003 [P] Create src/dashboard_v2/__init__.py
+- [x] T004 [P] Create src/dashboard_v2/routers/__init__.py
+- [x] T005 [P] Create src/dashboard_v2/services/__init__.py
+- [x] T006 [P] Create src/dashboard_v2/models/__init__.py
+- [x] T007 [P] Create tests/unit/test_pnl_service.py (empty file)
+- [x] T008 [P] Create tests/unit/test_position_service.py (empty file)
+- [x] T009 [P] Create tests/integration/test_dashboard_api.py (empty file)
 
 ---
 
@@ -39,17 +39,17 @@
 
 ### Config & App Shell
 
-- [ ] T010 Create config.py with environment variables (SUPABASE_URL, FEE_RATE, etc.) in src/dashboard_v2/config.py
-- [ ] T011 [P] Write unit test for app initialization in tests/unit/test_dashboard_app.py (RED)
-- [ ] T012 Create FastAPI app shell in src/dashboard_v2/main.py (app instance, Jinja2 setup, CORS)
-- [ ] T013 Verify app shell test passes (GREEN)
+- [x] T010 Create config.py with environment variables (SUPABASE_URL, FEE_RATE, etc.) in src/dashboard_v2/config.py
+- [x] T011 [P] Write unit test for app initialization in tests/unit/test_dashboard_app.py (RED)
+- [x] T012 Create FastAPI app shell in src/dashboard_v2/main.py (app instance, Jinja2 setup, CORS)
+- [x] T013 Verify app shell test passes (GREEN)
 
 ### Base Templates
 
-- [ ] T014 [P] Create base.html with Neon Daybreak layout in src/dashboard_v2/templates/base.html
-- [ ] T015 [P] Create neon-daybreak.css in src/dashboard_v2/static/css/neon-daybreak.css
-- [ ] T016 [P] Create loading.html skeleton in src/dashboard_v2/templates/partials/loading.html
-- [ ] T017 [P] Create error.html template in src/dashboard_v2/templates/partials/error.html
+- [x] T014 [P] Create base.html with Neon Daybreak layout in src/dashboard_v2/templates/base.html
+- [x] T015 [P] Create neon-daybreak.css in src/dashboard_v2/static/css/neon-daybreak.css
+- [x] T016 [P] Create loading.html skeleton in src/dashboard_v2/templates/partials/loading.html
+- [x] T017 [P] Create error.html template in src/dashboard_v2/templates/partials/error.html
 
 **Checkpoint**: Foundation ready - User Story implementation can begin
 
@@ -65,25 +65,25 @@
 
 > **TDD: Write tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T018 [P] [US1] Write unit test for kimp_service.get_current_kimp() in tests/unit/test_kimp_service.py (RED)
-- [ ] T019 [P] [US1] Write unit test for kimp_service.get_kimp_history() in tests/unit/test_kimp_service.py (RED)
-- [ ] T020 [P] [US1] Write unit test for health_service.check_all() in tests/unit/test_health_service.py (RED)
+- [x] T018 [P] [US1] Write unit test for kimp_service.get_current_kimp() in tests/unit/test_kimp_service.py (RED)
+- [x] T019 [P] [US1] Write unit test for kimp_service.get_kimp_history() in tests/unit/test_kimp_service.py (RED)
+- [x] T020 [P] [US1] Write unit test for health_service.check_all() in tests/unit/test_health_service.py (RED)
 
 ### Implementation for User Story 1
 
-- [ ] T021 [P] [US1] Create kimp.py Pydantic model in src/dashboard_v2/models/kimp.py
-- [ ] T022 [P] [US1] Create system.py Pydantic model in src/dashboard_v2/models/system.py
-- [ ] T023 [US1] Implement kimp_service.py in src/dashboard_v2/services/kimp_service.py
-- [ ] T024 [US1] Verify kimp_service tests pass (GREEN)
-- [ ] T025 [US1] Implement health_service.py in src/dashboard_v2/services/health_service.py
-- [ ] T026 [US1] Verify health_service tests pass (GREEN)
-- [ ] T027 [P] [US1] Create api.py router with /api/kimp, /api/kimp/current, /api/health in src/dashboard_v2/routers/api.py
-- [ ] T028 [US1] Create pages.py router with GET / in src/dashboard_v2/routers/pages.py
-- [ ] T029 [US1] Create index.html with loading states in src/dashboard_v2/templates/index.html
-- [ ] T030 [US1] Create dashboard.js with fetch and 10s auto-refresh in src/dashboard_v2/static/js/dashboard.js
-- [ ] T031 [US1] Add error handling with retry button in src/dashboard_v2/static/js/dashboard.js
-- [ ] T032 [P] [US1] Write integration test for /api/kimp endpoint in tests/integration/test_dashboard_api.py (RED)
-- [ ] T033 [US1] Verify integration test passes (GREEN)
+- [x] T021 [P] [US1] Create kimp.py Pydantic model in src/dashboard_v2/models/kimp.py
+- [x] T022 [P] [US1] Create system.py Pydantic model in src/dashboard_v2/models/system.py
+- [x] T023 [US1] Implement kimp_service.py in src/dashboard_v2/services/kimp_service.py
+- [x] T024 [US1] Verify kimp_service tests pass (GREEN)
+- [x] T025 [US1] Implement health_service.py in src/dashboard_v2/services/health_service.py
+- [x] T026 [US1] Verify health_service tests pass (GREEN)
+- [x] T027 [P] [US1] Create api.py router with /api/kimp, /api/kimp/current, /api/health in src/dashboard_v2/routers/api.py
+- [x] T028 [US1] Create pages.py router with GET / in src/dashboard_v2/routers/pages.py
+- [x] T029 [US1] Create index.html with loading states in src/dashboard_v2/templates/index.html
+- [x] T030 [US1] Create dashboard.js with fetch and 10s auto-refresh in src/dashboard_v2/static/js/dashboard.js
+- [x] T031 [US1] Add error handling with retry button in src/dashboard_v2/static/js/dashboard.js
+- [x] T032 [P] [US1] Write integration test for /api/kimp endpoint in tests/integration/test_dashboard_api.py (RED)
+- [x] T033 [US1] Verify integration test passes (GREEN)
 
 **Checkpoint**: User Story 1 완료 - 데이터 로딩 및 자동 갱신 독립 동작 확인
 
@@ -97,20 +97,20 @@
 
 ### Tests for User Story 2
 
-- [ ] T034 [P] [US2] Write unit test for position_service.get_position() in tests/unit/test_position_service.py (RED)
-- [ ] T035 [P] [US2] Write unit test for position_service.calculate_invested_amount() in tests/unit/test_position_service.py (RED)
+- [x] T034 [P] [US2] Write unit test for position_service.get_position() in tests/unit/test_position_service.py (RED)
+- [x] T035 [P] [US2] Write unit test for position_service.calculate_invested_amount() in tests/unit/test_position_service.py (RED)
 
 ### Implementation for User Story 2
 
-- [ ] T036 [P] [US2] Create position.py Pydantic model with total_invested_krw, upbit_invested, binance_invested_krw in src/dashboard_v2/models/position.py
-- [ ] T037 [US2] Implement position_service.py with invested amount calculation in src/dashboard_v2/services/position_service.py
-- [ ] T038 [US2] Verify position_service tests pass (GREEN)
-- [ ] T039 [US2] Add /api/position endpoint in src/dashboard_v2/routers/api.py
-- [ ] T040 [US2] Create positions_table.html with invested amount display in src/dashboard_v2/templates/components/positions_table.html
-- [ ] T041 [US2] Create kpi_cards.html with total invested KRW card in src/dashboard_v2/templates/components/kpi_cards.html
-- [ ] T042 [US2] Update dashboard.js to fetch and display position data in src/dashboard_v2/static/js/dashboard.js
-- [ ] T043 [P] [US2] Write integration test for /api/position endpoint in tests/integration/test_dashboard_api.py (RED)
-- [ ] T044 [US2] Verify integration test passes (GREEN)
+- [x] T036 [P] [US2] Create position.py Pydantic model with total_invested_krw, upbit_invested, binance_invested_krw in src/dashboard_v2/models/position.py
+- [x] T037 [US2] Implement position_service.py with invested amount calculation in src/dashboard_v2/services/position_service.py
+- [x] T038 [US2] Verify position_service tests pass (GREEN)
+- [x] T039 [US2] Add /api/position endpoint in src/dashboard_v2/routers/api.py
+- [x] T040 [US2] Create positions_table.html with invested amount display in src/dashboard_v2/templates/components/positions_table.html
+- [x] T041 [US2] Create kpi_cards.html with total invested KRW card in src/dashboard_v2/templates/components/kpi_cards.html
+- [x] T042 [US2] Update dashboard.js to fetch and display position data in src/dashboard_v2/static/js/dashboard.js
+- [x] T043 [P] [US2] Write integration test for /api/position endpoint in tests/integration/test_dashboard_api.py (RED)
+- [x] T044 [US2] Verify integration test passes (GREEN)
 
 **Checkpoint**: User Story 2 완료 - 매수 금액 표시 독립 동작 확인
 
@@ -124,20 +124,20 @@
 
 ### Tests for User Story 3
 
-- [ ] T045 [P] [US3] Write unit test for pnl_service.calculate_breakeven() in tests/unit/test_pnl_service.py (RED)
-- [ ] T046 [P] [US3] Write unit test for pnl_service.calculate_pnl() in tests/unit/test_pnl_service.py (RED)
-- [ ] T047 [P] [US3] Write unit test for pnl_service.is_profitable() in tests/unit/test_pnl_service.py (RED)
+- [x] T045 [P] [US3] Write unit test for pnl_service.calculate_breakeven() in tests/unit/test_pnl_service.py (RED)
+- [x] T046 [P] [US3] Write unit test for pnl_service.calculate_pnl() in tests/unit/test_pnl_service.py (RED)
+- [x] T047 [P] [US3] Write unit test for pnl_service.is_profitable() in tests/unit/test_pnl_service.py (RED)
 
 ### Implementation for User Story 3
 
-- [ ] T048 [P] [US3] Create pnl.py Pydantic model with breakeven_kimp, is_profitable in src/dashboard_v2/models/pnl.py
-- [ ] T049 [US3] Implement pnl_service.py with FEE_RATE=0.0038 in src/dashboard_v2/services/pnl_service.py
-- [ ] T050 [US3] Verify pnl_service tests pass (GREEN)
-- [ ] T051 [US3] Add /api/pnl endpoint in src/dashboard_v2/routers/api.py
-- [ ] T052 [US3] Update kpi_cards.html with breakeven display and profit/loss color in src/dashboard_v2/templates/components/kpi_cards.html
-- [ ] T053 [US3] Update dashboard.js to fetch and display PnL data with color coding in src/dashboard_v2/static/js/dashboard.js
-- [ ] T054 [P] [US3] Write integration test for /api/pnl endpoint in tests/integration/test_dashboard_api.py (RED)
-- [ ] T055 [US3] Verify integration test passes (GREEN)
+- [x] T048 [P] [US3] Create pnl.py Pydantic model with breakeven_kimp, is_profitable in src/dashboard_v2/models/pnl.py
+- [x] T049 [US3] Implement pnl_service.py with FEE_RATE=0.0038 in src/dashboard_v2/services/pnl_service.py
+- [x] T050 [US3] Verify pnl_service tests pass (GREEN)
+- [x] T051 [US3] Add /api/pnl endpoint in src/dashboard_v2/routers/api.py
+- [x] T052 [US3] Update kpi_cards.html with breakeven display and profit/loss color in src/dashboard_v2/templates/components/kpi_cards.html
+- [x] T053 [US3] Update dashboard.js to fetch and display PnL data with color coding in src/dashboard_v2/static/js/dashboard.js
+- [x] T054 [P] [US3] Write integration test for /api/pnl endpoint in tests/integration/test_dashboard_api.py (RED)
+- [x] T055 [US3] Verify integration test passes (GREEN)
 
 **Checkpoint**: User Story 3 완료 - 수익 분기점 표시 독립 동작 확인
 
@@ -151,14 +151,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T056 [P] [US4] Create sidebar.html with navigation in src/dashboard_v2/templates/components/sidebar.html
-- [ ] T057 [P] [US4] Create chart.html with Chart.js kimp chart in src/dashboard_v2/templates/components/chart.html
-- [ ] T058 [P] [US4] Create control_panel.html with emergency stop button in src/dashboard_v2/templates/components/control_panel.html
-- [ ] T059 [P] [US4] Create system_logs.html for system status in src/dashboard_v2/templates/components/system_logs.html
-- [ ] T060 [US4] Update base.html with full Neon Daybreak styles (neo-box, neo-btn, hard shadow) in src/dashboard_v2/templates/base.html
-- [ ] T061 [US4] Update neon-daybreak.css with responsive breakpoints (320px-768px) in src/dashboard_v2/static/css/neon-daybreak.css
-- [ ] T062 [US4] Update index.html to include all components in src/dashboard_v2/templates/index.html
-- [ ] T063 [US4] Test responsive layout on mobile viewport
+- [x] T056 [P] [US4] Create sidebar.html with navigation in src/dashboard_v2/templates/components/sidebar.html
+- [x] T057 [P] [US4] Create chart.html with Chart.js kimp chart in src/dashboard_v2/templates/components/chart.html
+- [x] T058 [P] [US4] Create control_panel.html with emergency stop button in src/dashboard_v2/templates/components/control_panel.html
+- [x] T059 [P] [US4] Create system_logs.html for system status in src/dashboard_v2/templates/components/system_logs.html
+- [x] T060 [US4] Update base.html with full Neon Daybreak styles (neo-box, neo-btn, hard shadow) in src/dashboard_v2/templates/base.html
+- [x] T061 [US4] Update neon-daybreak.css with responsive breakpoints (320px-768px) in src/dashboard_v2/static/css/neon-daybreak.css
+- [x] T062 [US4] Update index.html to include all components in src/dashboard_v2/templates/index.html
+- [x] T063 [US4] Test responsive layout on mobile viewport
 
 **Checkpoint**: User Story 4 완료 - Neon Daybreak 디자인 적용 확인
 
@@ -172,12 +172,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T064 [P] [US5] Create ticker.py Pydantic model in src/dashboard_v2/models/ticker.py
-- [ ] T065 [US5] Add ticker data aggregation in src/dashboard_v2/services/kimp_service.py
-- [ ] T066 [US5] Add /api/ticker endpoint in src/dashboard_v2/routers/api.py
-- [ ] T067 [US5] Create ticker.html with marquee animation in src/dashboard_v2/templates/components/ticker.html
-- [ ] T068 [US5] Update dashboard.js to update ticker data every 10s in src/dashboard_v2/static/js/dashboard.js
-- [ ] T069 [US5] Include ticker.html in base.html header in src/dashboard_v2/templates/base.html
+- [x] T064 [P] [US5] Create ticker.py Pydantic model in src/dashboard_v2/models/ticker.py
+- [x] T065 [US5] Add ticker data aggregation in src/dashboard_v2/services/kimp_service.py
+- [x] T066 [US5] Add /api/ticker endpoint in src/dashboard_v2/routers/api.py
+- [x] T067 [US5] Create ticker.html with marquee animation in src/dashboard_v2/templates/components/ticker.html
+- [x] T068 [US5] Update dashboard.js to update ticker data every 10s in src/dashboard_v2/static/js/dashboard.js
+- [x] T069 [US5] Include ticker.html in base.html header in src/dashboard_v2/templates/base.html
 
 **Checkpoint**: User Story 5 완료 - 실시간 티커 표시 확인
 
@@ -187,13 +187,13 @@
 
 **Purpose**: 기존 비상정지 기능 마이그레이션
 
-- [ ] T070 [P] Write unit test for emergency_service.activate() in tests/unit/test_emergency_service.py (RED)
-- [ ] T071 [P] Write unit test for emergency_service.deactivate() in tests/unit/test_emergency_service.py (RED)
-- [ ] T072 Implement emergency_service.py (migrate from existing) in src/dashboard_v2/services/emergency_service.py
-- [ ] T073 Verify emergency_service tests pass (GREEN)
-- [ ] T074 Add /api/emergency/* endpoints in src/dashboard_v2/routers/api.py
-- [ ] T075 Update control_panel.html with emergency stop UI in src/dashboard_v2/templates/components/control_panel.html
-- [ ] T076 Add /api/trades endpoint for trade history in src/dashboard_v2/routers/api.py
+- [x] T070 [P] Write unit test for emergency_service.activate() in tests/unit/test_emergency_service.py (RED)
+- [x] T071 [P] Write unit test for emergency_service.deactivate() in tests/unit/test_emergency_service.py (RED)
+- [x] T072 Implement emergency_service.py (migrate from existing) in src/dashboard_v2/services/emergency_service.py
+- [x] T073 Verify emergency_service tests pass (GREEN)
+- [x] T074 Add /api/emergency/* endpoints in src/dashboard_v2/routers/api.py
+- [x] T075 Update control_panel.html with emergency stop UI in src/dashboard_v2/templates/components/control_panel.html
+- [x] T076 Add /api/trades endpoint for trade history in src/dashboard_v2/routers/api.py
 
 **Checkpoint**: 기존 기능 마이그레이션 완료
 
@@ -203,8 +203,8 @@
 
 **Purpose**: Docker 및 배포 설정
 
-- [ ] T077 [P] Create Dockerfile.dashboard-v2 with uvicorn runtime
-- [ ] T078 [P] Create docker-compose.dashboard-v2.yml with port 8502
+- [x] T077 [P] Create Dockerfile.dashboard-v2 with uvicorn runtime
+- [x] T078 [P] Create docker-compose.dashboard-v2.yml with port 8502
 - [ ] T079 Build and test Docker image locally
 - [ ] T080 Deploy to Vultr server (SSH)
 - [ ] T081 Configure Cloudflare Tunnel (manual step)
@@ -218,13 +218,13 @@
 
 **Purpose**: 최종 마무리 및 품질 검증
 
-- [ ] T083 [P] Add comprehensive error handling for all API endpoints
-- [ ] T084 [P] Add loading states for all data sections
-- [ ] T085 Run all tests and ensure 100% pass rate
-- [ ] T086 Run black (line-length=100) and isort on src/dashboard_v2/
-- [ ] T087 Test mobile view on actual mobile device
-- [ ] T088 Verify initial load time < 3 seconds
-- [ ] T089 Update CLAUDE.md with dashboard_v2 module documentation
+- [x] T083 [P] Add comprehensive error handling for all API endpoints
+- [x] T084 [P] Add loading states for all data sections
+- [x] T085 Run all tests and ensure 100% pass rate
+- [x] T086 Run black (line-length=100) and isort on src/dashboard_v2/
+- [ ] T087 Test mobile view on actual mobile device (manual)
+- [ ] T088 Verify initial load time < 3 seconds (manual)
+- [x] T089 Update CLAUDE.md with dashboard_v2 module documentation
 
 ---
 
