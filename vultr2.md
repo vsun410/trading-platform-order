@@ -512,7 +512,260 @@ na4.pe.kr (또는 kimptrade.na4.pe.kr)
 
 ---
 
-## 13. 결론
+## 13. 네트워크 설정 (서버)
+
+### 13.1 네트워크 인터페이스
+
+| 인터페이스 | IP 주소 | 용도 |
+|-----------|---------|------|
+| `lo` | 127.0.0.1/8 | 루프백 |
+| `enp1s0` | 158.247.206.2/23 | 공인 IP (메인) |
+| `docker0` | 172.17.0.1/16 | Docker 기본 브릿지 |
+| `br-a58195ffbfaa` | 172.18.0.1/16 | kimptrade-dashboard-network (V1) |
+| `br-a975ad3515f9` | 172.19.0.1/16 | kimptrade-network (V2) |
+
+### 13.2 DNS 서버
+
+```
+nameserver 108.61.10.10    # Vultr Primary
+nameserver 9.9.9.9         # Quad9
+nameserver 2001:19f0:300:1704::6  # Vultr IPv6
+nameserver 2620:fe::fe     # Quad9 IPv6
+```
+
+### 13.3 열린 포트
+
+| 포트 | 프로토콜 | 서비스 | 바인딩 | 프로세스 |
+|------|----------|--------|--------|----------|
+| 22 | TCP | SSH | 0.0.0.0 | sshd |
+| 8501 | TCP | Dashboard V1 | 0.0.0.0 | docker-proxy |
+| 8502 | TCP | Dashboard V2 | 0.0.0.0 | docker-proxy |
+
+### 13.4 방화벽 (UFW)
+
+```
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere
+```
+
+> **참고**: 포트 8501, 8502는 UFW에 명시적으로 열려있지 않으나, Docker가 iptables를 직접 조작하여 접근 가능
+
+---
+
+## 14. Docker 상세 정보 (서버)
+
+### 14.1 Docker 버전
+
+| 컴포넌트 | 버전 |
+|----------|------|
+| **Docker Engine** | 29.1.3 |
+| **Docker Compose** | v5.0.0 |
+| **Storage Driver** | overlayfs |
+| **Cgroup Driver** | systemd (v2) |
+| **Logging Driver** | json-file |
+
+### 14.2 Docker 네트워크
+
+| 네트워크 ID | 이름 | 드라이버 | 용도 |
+|-------------|------|----------|------|
+| 5959692b2b01 | bridge | bridge | 기본 |
+| a58195ffbfaa | kimptrade-dashboard-network | bridge | V1용 |
+| a975ad3515f9 | kimptrade-network | bridge | V2용 |
+
+### 14.3 Docker 이미지
+
+| 이미지 | 태그 | 크기 | 용도 |
+|--------|------|------|------|
+| `order-dashboard-v2` | latest | **306MB** | Dashboard V2 (FastAPI) |
+| `kimptrade-dashboard` | latest | 1.15GB | Dashboard V1 (Streamlit) - 레거시 |
+
+---
+
+## 15. V2 컨테이너 상세 설정
+
+### 15.1 환경변수 (실제 서버)
+
+```bash
+SUPABASE_URL=https://shcgnkmlmjohmpeoyjlz.supabase.co
+SUPABASE_KEY=eyJhbGci...  # (anon key)
+REFRESH_INTERVAL=10
+API_TIMEOUT=10
+FEE_RATE=0.0038
+DEBUG=false
+PYTHON_VERSION=3.11.14
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+PYTHONPATH=/app
+```
+
+### 15.2 헬스체크 설정
+
+```yaml
+healthcheck:
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8502/api/health')"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 10s
+```
+
+### 15.3 헬스체크 응답 예시
+
+```json
+{
+  "status": "healthy",
+  "services": {
+    "supabase": {
+      "name": "supabase",
+      "healthy": true,
+      "latency_ms": null,
+      "error": null
+    },
+    "upbit": {
+      "name": "upbit",
+      "healthy": true,
+      "latency_ms": 85.61
+    },
+    "binance": {
+      "name": "binance",
+      "healthy": true,
+      "latency_ms": 75.98
+    }
+  },
+  "timestamp": "2025-12-17T12:39:XX"
+}
+```
+
+---
+
+## 16. 시스템 서비스 (서버)
+
+### 16.1 systemd 서비스 상태
+
+| 서비스 | 상태 | 설명 |
+|--------|------|------|
+| docker.service | running | Docker Engine |
+| containerd.service | running | Container Runtime |
+| ssh.service | running | SSH Server |
+| ufw.service | active | 방화벽 |
+| systemd-resolved.service | running | DNS Resolver |
+| systemd-timesyncd.service | running | NTP 동기화 |
+| unattended-upgrades.service | running | 자동 보안 업데이트 |
+
+---
+
+## 17. Git 상태 (서버)
+
+### 17.1 /root/order (Dashboard V2)
+
+```
+Remote: https://github.com/vsun410/trading-platform-order.git
+Branch: feat/dashboard-migration
+최신 커밋: 28d2aa3 (fix(docker): add pydantic-settings dependency)
+```
+
+### 17.2 /root/kimptrade (Dashboard V1 - 레거시)
+
+```
+상태: Git 미연결 (tar.gz에서 압축 해제됨)
+용도: V1 레거시, 업데이트 안함
+```
+
+---
+
+## 18. 관련 레포지토리 정보
+
+### 18.1 레포 분리 구조
+
+| 레포 | GitHub URL | 역할 |
+|------|-----------|------|
+| **trading-platform-order** | vsun410/trading-platform-order | Dashboard (V1, V2) |
+| **kimptrade** | vsun410/kimptrade | Backend, Collector, DB |
+
+### 18.2 kimptrade 레포 현황
+
+- **역할**: 데이터 수집, DB 마이그레이션, Backend API
+- **Collector 서버**: 64.176.229.30
+- **DB**: Supabase (shcgnkmlmjohmpeoyjlz)
+- **주요 테이블**: `kimp_1m`, `positions`, `trades`, `fx_rates`, `system_status`
+
+### 18.3 system_status 테이블 (Dashboard 의존)
+
+```sql
+-- kimptrade 레포에서 마이그레이션 실행됨
+CREATE TABLE system_status (
+    key VARCHAR(50) PRIMARY KEY,
+    value JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 초기 데이터
+INSERT INTO system_status (key, value)
+VALUES ('emergency_stop', '{"active": false}');
+```
+
+---
+
+## 19. SSH 접속 및 주요 명령어
+
+### 19.1 SSH 접속
+
+```bash
+# Dashboard 서버
+ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2
+
+# Collector 서버 (kimptrade)
+ssh -i ~/.ssh/kimptrade_vultr root@64.176.229.30
+```
+
+### 19.2 Dashboard V2 관리 명령어
+
+```bash
+# 상태 확인
+docker ps | grep dashboard-v2
+docker logs -f kimptrade-dashboard-v2
+
+# 재시작
+cd /root/order
+docker compose -f docker-compose.dashboard-v2.yml restart
+
+# 재빌드 및 재시작
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
+docker compose -f docker-compose.dashboard-v2.yml up -d
+
+# 헬스체크
+curl http://localhost:8502/api/health
+```
+
+### 19.3 코드 업데이트
+
+```bash
+cd /root/order
+git fetch origin
+git pull origin feat/dashboard-migration
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
+docker compose -f docker-compose.dashboard-v2.yml up -d
+```
+
+---
+
+## 20. 변경 이력
+
+| 날짜 | 이벤트 | 비고 |
+|------|--------|------|
+| 2025-12-17 04:42 | 서버 부팅 | - |
+| 2025-12-17 | Dashboard V1 (Streamlit) 배포 | 이전 세션 |
+| 2025-12-17 | Dashboard V2 (FastAPI) 배포 | 새 세션 |
+| 2025-12-17 | 본 문서 작성 | vultr2.md |
+
+---
+
+## 21. 결론
 
 ### 13.1 현재 상태
 
