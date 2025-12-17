@@ -1,9 +1,9 @@
-# 🖥️ 운영 대시보드 & 텔레그램 봇 명세서
+# 🖥️ 운영 대시보드 명세서 (웹 배포 버전)
 
-**Repository:** trading-platform-order  
-**Version:** 2.0  
-**Date:** 2025-12-11  
-**Tech Stack:** Streamlit (PC) + Telegram Bot (모바일)
+**Repository:** trading-platform-order
+**Version:** 3.0
+**Date:** 2025-12-17
+**Tech Stack:** Streamlit + Cloudflare Tunnel + Zero Trust
 
 > ⚠️ **중요:** 주문 실행은 자동이지만, 모니터링과 비상정지는 수동으로 수행합니다.
 
@@ -15,346 +15,171 @@
 
 김프 차익거래 시스템의 **실시간 모니터링**과 **비상정지** 기능을 제공합니다.
 
-### 1.2 아키텍처: PC + 모바일 분리
+### 1.2 아키텍처: 웹 통합 (반응형)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    운영 인터페이스 구조                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   🖥️ PC: Streamlit 대시보드          📱 모바일: Telegram Bot    │
-│   ─────────────────────────          ──────────────────────     │
-│   • 로컬 실행 (localhost)            • 어디서나 접근             │
-│   • 상세 모니터링                     • 비상정지 특화             │
-│   • 차트 & 거래 이력                  • 푸시 알림                │
-│   • 시스템 설정                       • 간단 상태 확인           │
-│                                                                 │
-│   용도: 집/사무실에서                 용도: 이동 중 긴급 대응     │
-│         상세 분석 & 모니터링                빠른 확인 & 제어     │
-│                                                                 │
-│   배포: ❌ 클라우드 배포 안함          배포: Telegram 서버 활용   │
-│         Docker 로컬 실행만                   (무료)              │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         운영 인터페이스 구조 (v3.0)                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   🌐 인터넷                                                                 │
+│       │                                                                     │
+│       ▼                                                                     │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  Cloudflare Zero Trust Access                                       │   │
+│   │  • URL: https://dashboard.yourdomain.com                            │   │
+│   │  • 인증: Google OAuth / GitHub / Email OTP                          │   │
+│   │  • 무료: 50명까지                                                    │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼ (인증 통과 시에만)                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  Cloudflare Tunnel (cloudflared)                                    │   │
+│   │  • 서버 포트 노출 없음 (보안)                                        │   │
+│   │  • 자동 HTTPS                                                       │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼                                                                     │
+│   ┌───────────────────────────────┐   ┌─────────────────────────────────┐   │
+│   │  Vultr 서버                   │   │  Supabase                       │   │
+│   │  ├── Streamlit (:8501)        │◄──┤  • kimp_1m (김프 데이터)        │   │
+│   │  │     • 반응형 UI            │   │  • positions (포지션)           │   │
+│   │  │     • 비상정지 버튼        │   │  • trades (거래 이력)           │   │
+│   │  │     • 실시간 차트          │   │  • system_status (비상정지)     │   │
+│   │  └── Collector (기존)         │   │  • fx_rates (환율)              │   │
+│   └───────────────────────────────┘   └─────────────────────────────────┘   │
+│                                                                             │
+│   🖥️ PC / 📱 모바일: 동일 URL, 반응형 웹                                    │
+│   🔔 알림: Telegram Bot (푸시 알림 전용)                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.3 역할 분리
+### 1.3 이전 버전과의 차이점
 
-| 기능 | PC (Streamlit) | 모바일 (Telegram) |
-|------|----------------|-------------------|
-| **🚨 비상정지** | ✅ | ✅ (핵심) |
-| **📊 포지션 상세** | ✅ (상세) | ✅ (요약) |
-| **📈 김프 차트** | ✅ (1시간 차트) | ❌ |
-| **💰 손익 상세** | ✅ (상세 분석) | ✅ (요약) |
-| **📝 거래 이력** | ✅ (테이블) | ❌ |
-| **⚡ 시스템 상태** | ✅ (상세) | ✅ (요약) |
-| **🔔 푸시 알림** | ❌ | ✅ (핵심) |
-| **어디서나 접근** | ❌ (로컬만) | ✅ |
+| 항목 | v2.0 (이전) | v3.0 (현재) |
+|------|-------------|-------------|
+| **접근 방식** | localhost + Telegram | 웹 (어디서나) |
+| **모바일** | Telegram Bot 필수 | 반응형 웹 (동일 URL) |
+| **인증** | 없음 (로컬) | Cloudflare Zero Trust |
+| **배포** | Docker 로컬 | Cloudflare Tunnel |
+| **비상정지 저장** | Redis | Supabase |
+| **Telegram** | 핵심 기능 | 알림 전용 (선택) |
 
 ---
 
-## 2. Telegram Bot (모바일)
+## 2. Cloudflare 설정
 
-### 2.1 핵심 기능
+### 2.1 필요 조건
 
-| 기능 | 명령어 | 설명 |
-|------|--------|------|
-| **🚨 비상정지** | `/stop` | 신규 진입 즉시 차단 |
-| **🟢 시스템 재개** | `/resume` | 자동거래 재개 |
-| **📊 상태 확인** | `/status` | 현재 상태 요약 |
-| **📋 포지션** | `/position` | 포지션 상세 |
-| **📈 김프율** | `/kimp` | 현재 김프율 |
-| **💰 손익** | `/pnl` | 손익 현황 |
+- Cloudflare 계정 (무료)
+- 도메인 (Cloudflare DNS 사용)
+- Vultr 서버 (기존 kimptrade 서버)
 
-### 2.2 UI 예시
+### 2.2 Cloudflare Tunnel 설치
+
+```bash
+# Vultr 서버에서 실행
+
+# 1. cloudflared 설치 (Ubuntu/Debian)
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# 2. Cloudflare 로그인
+cloudflared tunnel login
+
+# 3. 터널 생성
+cloudflared tunnel create kimptrade-dashboard
+
+# 4. 설정 파일 생성
+cat > ~/.cloudflared/config.yml << EOF
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: dashboard.yourdomain.com
+    service: http://localhost:8501
+  - service: http_status:404
+EOF
+
+# 5. DNS 레코드 생성
+cloudflared tunnel route dns kimptrade-dashboard dashboard.yourdomain.com
+
+# 6. 서비스로 등록 (자동 시작)
+sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared
+```
+
+### 2.3 Zero Trust Access 설정
+
+1. **Cloudflare Dashboard** → Zero Trust → Access → Applications
+2. **Add an application** → Self-hosted
+3. 설정:
+   - Application name: `kimptrade-dashboard`
+   - Session Duration: `24 hours`
+   - Application domain: `dashboard.yourdomain.com`
+4. **Policy 추가**:
+   - Policy name: `Allow Owners`
+   - Action: `Allow`
+   - Include: `Emails` → 허용할 이메일 목록
+5. **Authentication**:
+   - Identity providers: `One-time PIN` (가장 간단)
+   - 또는 Google / GitHub OAuth 연동
+
+### 2.4 인증 플로우
 
 ```
-┌─────────────────────────────────────┐
-│  📊 김프 트레이딩 봇                 │
-├─────────────────────────────────────┤
-│                                     │
-│  현재 상태: 🟢 자동거래 활성화       │
-│  김프율: 3.24% (▲0.12%)             │
-│  포지션: 0.5 BTC                    │
-│  순이익: +0.78% ✅                  │
-│                                     │
-│  ┌─────────┐  ┌─────────┐          │
-│  │📊 상태  │  │💰 손익  │          │
-│  └─────────┘  └─────────┘          │
-│  ┌─────────┐  ┌─────────┐          │
-│  │📈 김프  │  │📋 포지션│          │
-│  └─────────┘  └─────────┘          │
-│  ┌─────────────────────────┐       │
-│  │    🚨 비상정지 (STOP)    │       │
-│  └─────────────────────────┘       │
-│                                     │
-└─────────────────────────────────────┘
-```
-
-### 2.3 비상정지 플로우
-
-```
-/stop 명령어 또는 🚨 버튼 클릭
+사용자가 dashboard.yourdomain.com 접속
               │
               ▼
 ┌─────────────────────────────────────┐
-│  ⚠️ 비상정지를 실행하시겠습니까?     │
+│  Cloudflare Zero Trust 인증 화면    │
 │                                     │
-│  • 신규 진입이 중단됩니다            │
-│  • 기존 포지션은 유지됩니다          │
+│  이메일 주소를 입력하세요:          │
+│  ┌─────────────────────────────┐   │
+│  │ user@example.com            │   │
+│  └─────────────────────────────┘   │
 │                                     │
-│  ┌──────────┐  ┌──────────┐        │
-│  │ ✅ 확인  │  │ ❌ 취소  │        │
-│  └──────────┘  └──────────┘        │
+│  ┌─────────────────────────────┐   │
+│  │      📧 코드 받기           │   │
+│  └─────────────────────────────┘   │
 └─────────────────────────────────────┘
-              │ 확인
-              ▼
+              │
+              ▼ (이메일로 OTP 수신)
 ┌─────────────────────────────────────┐
-│  🔴 비상정지 실행 완료               │
-│                                     │
-│  시간: 2025-12-11 14:32:05 KST      │
-│  상태: 신규 진입 차단됨              │
-│                                     │
-│  재개하려면 /resume 입력             │
+│  인증 코드를 입력하세요:            │
+│  ┌─────────────────────────────┐   │
+│  │ 123456                      │   │
+│  └─────────────────────────────┘   │
 └─────────────────────────────────────┘
-```
-
-### 2.4 푸시 알림 이벤트
-
-| 이벤트 | 알림 내용 |
-|--------|-----------|
-| **포지션 진입** | "📈 포지션 진입\n김프: 3.5%\n수량: 0.5 BTC" |
-| **포지션 청산** | "📉 포지션 청산\n순이익: +1.2%\n수량: 0.5 BTC" |
-| **비상정지** | "🚨 비상정지 활성화\n신규 진입 차단됨" |
-| **시스템 재개** | "🟢 시스템 재개\n자동거래 활성화" |
-| **API 에러** | "⚠️ API 에러\n업비트 연결 실패 (3회)" |
-| **포지션 불일치** | "⚠️ 포지션 불일치\n0.001 BTC 차이 감지" |
-
-### 2.5 구현 코드
-
-```python
-# src/telegram_bot/bot.py
-
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from datetime import datetime
-import os
-
-class TradingBot:
-    """김프 트레이딩 텔레그램 봇"""
-    
-    def __init__(self, token: str, allowed_chat_ids: list):
-        self.token = token
-        self.allowed_chat_ids = allowed_chat_ids  # 보안: 허용된 채팅만
-        self.emergency = EmergencyStop()
-    
-    def _check_auth(self, chat_id: int) -> bool:
-        """접근 권한 확인"""
-        return chat_id in self.allowed_chat_ids
-    
-    async def start(self, update: Update, context):
-        """봇 시작 - 메인 메뉴"""
-        if not self._check_auth(update.effective_chat.id):
-            await update.message.reply_text("⛔ 접근 권한이 없습니다.")
-            return
-        
-        keyboard = [
-            [
-                InlineKeyboardButton("📊 상태", callback_data="status"),
-                InlineKeyboardButton("💰 손익", callback_data="pnl"),
-            ],
-            [
-                InlineKeyboardButton("📈 김프", callback_data="kimp"),
-                InlineKeyboardButton("📋 포지션", callback_data="position"),
-            ],
-            [
-                InlineKeyboardButton("🚨 비상정지", callback_data="stop"),
-            ],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            "📊 *김프 트레이딩 봇*\n\n원하는 기능을 선택하세요:",
-            reply_markup=reply_markup,
-            parse_mode="Markdown"
-        )
-    
-    async def status(self, update: Update, context):
-        """현재 상태 요약"""
-        query = update.callback_query
-        await query.answer()
-        
-        # 상태 조회
-        is_stopped = self.emergency.is_active()
-        status_emoji = "🔴 정지됨" if is_stopped else "🟢 활성화"
-        
-        # 김프율, 포지션 조회 (실제 구현 시 서비스 연동)
-        kimp = await self._get_current_kimp()
-        position = await self._get_position()
-        pnl = await self._get_pnl()
-        
-        message = (
-            f"📊 *현재 상태*\n\n"
-            f"시스템: {status_emoji}\n"
-            f"김프율: {kimp.rate:.2f}%\n"
-            f"포지션: {position.quantity:.4f} BTC\n"
-            f"순이익: {pnl.net_profit:+.2f}%\n"
-            f"\n마지막 업데이트: {datetime.now().strftime('%H:%M:%S')}"
-        )
-        
-        await query.edit_message_text(message, parse_mode="Markdown")
-    
-    async def stop_command(self, update: Update, context):
-        """비상정지 확인"""
-        if not self._check_auth(update.effective_chat.id):
-            return
-        
-        keyboard = [
-            [
-                InlineKeyboardButton("✅ 확인", callback_data="stop_confirm"),
-                InlineKeyboardButton("❌ 취소", callback_data="stop_cancel"),
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            "⚠️ *비상정지를 실행하시겠습니까?*\n\n"
-            "• 신규 진입이 중단됩니다\n"
-            "• 기존 포지션은 유지됩니다",
-            reply_markup=reply_markup,
-            parse_mode="Markdown"
-        )
-    
-    async def stop_confirm(self, update: Update, context):
-        """비상정지 실행"""
-        query = update.callback_query
-        await query.answer()
-        
-        # 비상정지 실행
-        self.emergency.activate(reason="telegram_bot")
-        
-        await query.edit_message_text(
-            "🔴 *비상정지 실행 완료*\n\n"
-            f"시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} KST\n"
-            "상태: 신규 진입 차단됨\n\n"
-            "재개하려면 /resume 입력",
-            parse_mode="Markdown"
-        )
-    
-    async def resume(self, update: Update, context):
-        """시스템 재개"""
-        if not self._check_auth(update.effective_chat.id):
-            return
-        
-        self.emergency.deactivate()
-        
-        await update.message.reply_text(
-            "🟢 *시스템 재개됨*\n\n"
-            f"시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} KST\n"
-            "상태: 자동거래 활성화",
-            parse_mode="Markdown"
-        )
-
-
-def main():
-    """봇 실행"""
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    allowed = [int(os.getenv("TELEGRAM_CHAT_ID"))]
-    
-    bot = TradingBot(token, allowed)
-    app = Application.builder().token(token).build()
-    
-    # 핸들러 등록
-    app.add_handler(CommandHandler("start", bot.start))
-    app.add_handler(CommandHandler("stop", bot.stop_command))
-    app.add_handler(CommandHandler("resume", bot.resume))
-    app.add_handler(CallbackQueryHandler(bot.status, pattern="status"))
-    app.add_handler(CallbackQueryHandler(bot.stop_confirm, pattern="stop_confirm"))
-    
-    # 봇 실행
-    app.run_polling()
-
-
-if __name__ == "__main__":
-    main()
-```
-
-### 2.6 알림 발송 클래스
-
-```python
-# src/telegram_bot/notifier.py
-
-import telegram
-from datetime import datetime
-
-class TelegramNotifier:
-    """푸시 알림 발송"""
-    
-    def __init__(self, token: str, chat_id: int):
-        self.bot = telegram.Bot(token)
-        self.chat_id = chat_id
-    
-    async def send(self, message: str):
-        """메시지 발송"""
-        await self.bot.send_message(
-            chat_id=self.chat_id,
-            text=message,
-            parse_mode="Markdown"
-        )
-    
-    async def on_entry(self, kimp_rate: float, quantity: float):
-        """진입 알림"""
-        await self.send(
-            f"📈 *포지션 진입*\n\n"
-            f"김프율: {kimp_rate:.2f}%\n"
-            f"수량: {quantity:.4f} BTC\n"
-            f"시간: {datetime.now().strftime('%H:%M:%S')}"
-        )
-    
-    async def on_exit(self, net_profit: float, quantity: float):
-        """청산 알림"""
-        await self.send(
-            f"📉 *포지션 청산*\n\n"
-            f"순이익: {net_profit:+.2f}%\n"
-            f"수량: {quantity:.4f} BTC\n"
-            f"시간: {datetime.now().strftime('%H:%M:%S')}"
-        )
-    
-    async def on_emergency_stop(self, reason: str):
-        """비상정지 알림"""
-        await self.send(
-            f"🚨 *비상정지 활성화*\n\n"
-            f"사유: {reason}\n"
-            f"상태: 신규 진입 차단됨\n"
-            f"시간: {datetime.now().strftime('%H:%M:%S')}"
-        )
-    
-    async def on_error(self, error: str):
-        """에러 알림"""
-        await self.send(
-            f"⚠️ *시스템 에러*\n\n"
-            f"{error}\n"
-            f"시간: {datetime.now().strftime('%H:%M:%S')}"
-        )
+              │
+              ▼ (인증 성공)
+┌─────────────────────────────────────┐
+│  📊 김프 차익거래 대시보드          │
+│  (Streamlit 앱 표시)                │
+└─────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Streamlit 대시보드 (PC)
+## 3. Streamlit 대시보드
 
 ### 3.1 실행 환경
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    로컬 실행 환경                                │
+│                    웹 배포 환경                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│   실행: docker-compose up dashboard                             │
-│   접속: http://localhost:8501                                   │
+│   실행: docker-compose up -d dashboard                          │
+│   내부: http://localhost:8501                                   │
+│   외부: https://dashboard.yourdomain.com (Cloudflare 경유)      │
 │                                                                 │
-│   ❌ 클라우드 배포 안함                                          │
-│   ❌ 외부 접근 불가                                              │
-│   ✅ 로컬 네트워크에서만 접근                                    │
+│   ✅ 인터넷 어디서나 접근 가능                                   │
+│   ✅ PC/모바일 반응형 지원                                       │
+│   ✅ Cloudflare Zero Trust 인증                                 │
+│   ✅ 자동 HTTPS (Cloudflare)                                    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -411,112 +236,120 @@ class TelegramNotifier:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.3 메인 앱 구조
+### 3.3 모바일 레이아웃 (반응형)
 
-```python
-# src/dashboard/app.py
-
-import streamlit as st
-from components import (
-    emergency_panel,
-    position_card,
-    kimp_chart,
-    pnl_card,
-    system_status,
-    trade_history,
-)
-
-# 페이지 설정
-st.set_page_config(
-    page_title="김프 차익거래 대시보드",
-    page_icon="📊",
-    layout="wide",
-)
-
-def main():
-    st.title("📊 김프 차익거래 운영 대시보드")
-    
-    # 비상 제어 패널
-    emergency_panel.render()
-    
-    st.divider()
-    
-    # 메인 대시보드
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        position_card.render()
-        pnl_card.render()
-    
-    with col2:
-        kimp_chart.render()
-        system_status.render()
-    
-    st.divider()
-    
-    # 거래 이력
-    trade_history.render()
-    
-    # 자동 새로고침 (5초)
-    st.empty()
-    import time
-    time.sleep(5)
-    st.rerun()
-
-
-if __name__ == "__main__":
-    main()
+```
+┌─────────────────────────┐
+│ 📊 김프 대시보드        │
+├─────────────────────────┤
+│                         │
+│ 🚨 비상 제어            │
+│ ┌─────────────────────┐ │
+│ │   🔴 비상정지       │ │
+│ └─────────────────────┘ │
+│ ┌─────────────────────┐ │
+│ │   🟢 시스템 재개    │ │
+│ └─────────────────────┘ │
+│ 상태: 🟢 활성화         │
+│                         │
+├─────────────────────────┤
+│ 📊 포지션               │
+│ 업비트: 0.5 BTC         │
+│ 바이낸스: -0.5 BTC      │
+├─────────────────────────┤
+│ 📈 김프율: 3.24%        │
+│ [===== 차트 =====]      │
+├─────────────────────────┤
+│ 💰 순이익: +0.78%       │
+│ 금일: +₩152,000         │
+├─────────────────────────┤
+│ ⚡ 시스템 상태          │
+│ 업비트: 🟢              │
+│ 바이낸스: 🟢            │
+└─────────────────────────┘
 ```
 
 ---
 
-## 4. 공통 백엔드: 비상정지 시스템
+## 4. 비상정지 시스템
 
-### 4.1 비상정지 서비스 (PC/모바일 공유)
+### 4.1 비상정지 서비스 (Supabase 기반)
 
 ```python
 # src/services/emergency_stop.py
 
-import redis
-from datetime import datetime
+from datetime import datetime, timezone
+from supabase import create_client
 
 class EmergencyStop:
-    """비상정지 관리 (PC/모바일 공유)"""
-    
-    STOP_KEY = "kimp:emergency_stop"
-    
-    def __init__(self, redis_url: str = None):
-        self.redis = redis.from_url(redis_url or "redis://localhost:6379")
-    
-    def activate(self, reason: str = "manual") -> bool:
+    """비상정지 관리 (Supabase 기반)"""
+
+    TABLE_NAME = "system_status"
+    STATUS_KEY = "emergency_stop"
+
+    def __init__(self, supabase_url: str, supabase_key: str):
+        self.client = create_client(supabase_url, supabase_key)
+
+    async def activate(self, reason: str = "manual") -> bool:
         """비상정지 활성화"""
-        self.redis.hset(self.STOP_KEY, mapping={
-            "active": "true",
-            "activated_at": datetime.utcnow().isoformat(),
-            "reason": reason,
-        })
+        now = datetime.now(timezone.utc).isoformat()
+        data = {
+            "key": self.STATUS_KEY,
+            "value": {
+                "active": True,
+                "activated_at": now,
+                "reason": reason,
+            },
+            "updated_at": now,
+        }
+        self.client.table(self.TABLE_NAME).upsert(data).execute()
         return True
-    
-    def deactivate(self) -> bool:
+
+    async def deactivate(self) -> bool:
         """비상정지 해제"""
-        self.redis.hset(self.STOP_KEY, mapping={
-            "active": "false",
-            "deactivated_at": datetime.utcnow().isoformat(),
-        })
+        now = datetime.now(timezone.utc).isoformat()
+        data = {
+            "key": self.STATUS_KEY,
+            "value": {
+                "active": False,
+                "deactivated_at": now,
+            },
+            "updated_at": now,
+        }
+        self.client.table(self.TABLE_NAME).upsert(data).execute()
         return True
-    
-    def is_active(self) -> bool:
+
+    async def is_active(self) -> bool:
         """현재 비상정지 상태 확인"""
-        status = self.redis.hget(self.STOP_KEY, "active")
-        return status == b"true" if status else False
-    
-    def get_status(self) -> dict:
-        """상세 상태 조회"""
-        data = self.redis.hgetall(self.STOP_KEY)
-        return {k.decode(): v.decode() for k, v in data.items()}
+        result = (
+            self.client.table(self.TABLE_NAME)
+            .select("value")
+            .eq("key", self.STATUS_KEY)
+            .single()
+            .execute()
+        )
+        if result.data:
+            return result.data.get("value", {}).get("active", False)
+        return False
 ```
 
-### 4.2 비상정지 모드 동작
+### 4.2 Supabase 테이블 생성
+
+```sql
+-- system_status 테이블 생성
+CREATE TABLE IF NOT EXISTS system_status (
+    key VARCHAR(50) PRIMARY KEY,
+    value JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 초기 비상정지 상태 삽입
+INSERT INTO system_status (key, value)
+VALUES ('emergency_stop', '{"active": false}')
+ON CONFLICT (key) DO NOTHING;
+```
+
+### 4.3 비상정지 모드 동작
 
 | 기능 | 정상 모드 | 비상정지 모드 |
 |------|-----------|---------------|
@@ -528,18 +361,83 @@ class EmergencyStop:
 
 ---
 
-## 5. 디렉토리 구조
+## 5. Telegram Bot (알림 전용)
+
+> 📝 **변경 사항:** v3.0에서 Telegram Bot은 **푸시 알림 전용**으로 축소되었습니다.
+> 비상정지, 상태 확인 등은 웹 대시보드에서 수행합니다.
+
+### 5.1 알림 이벤트
+
+| 이벤트 | 알림 내용 |
+|--------|-----------|
+| **포지션 진입** | "📈 포지션 진입\n김프: 3.5%\n수량: 0.5 BTC" |
+| **포지션 청산** | "📉 포지션 청산\n순이익: +1.2%\n수량: 0.5 BTC" |
+| **비상정지** | "🚨 비상정지 활성화\n신규 진입 차단됨" |
+| **시스템 재개** | "🟢 시스템 재개\n자동거래 활성화" |
+| **API 에러** | "⚠️ API 에러\n업비트 연결 실패 (3회)" |
+
+### 5.2 알림 발송 클래스
+
+```python
+# src/telegram/notifier.py
+
+import telegram
+from datetime import datetime
+
+class TelegramNotifier:
+    """푸시 알림 발송 (알림 전용)"""
+
+    def __init__(self, token: str, chat_id: int):
+        self.bot = telegram.Bot(token)
+        self.chat_id = chat_id
+
+    async def send(self, message: str):
+        """메시지 발송"""
+        await self.bot.send_message(
+            chat_id=self.chat_id,
+            text=message,
+            parse_mode="Markdown"
+        )
+
+    async def on_entry(self, kimp_rate: float, quantity: float):
+        """진입 알림"""
+        await self.send(
+            f"📈 *포지션 진입*\n\n"
+            f"김프율: {kimp_rate:.2f}%\n"
+            f"수량: {quantity:.4f} BTC\n"
+            f"시간: {datetime.now().strftime('%H:%M:%S')}\n\n"
+            f"📊 대시보드: https://dashboard.yourdomain.com"
+        )
+
+    async def on_exit(self, net_profit: float, quantity: float):
+        """청산 알림"""
+        await self.send(
+            f"📉 *포지션 청산*\n\n"
+            f"순이익: {net_profit:+.2f}%\n"
+            f"수량: {quantity:.4f} BTC\n"
+            f"시간: {datetime.now().strftime('%H:%M:%S')}"
+        )
+
+    async def on_emergency_stop(self, reason: str):
+        """비상정지 알림"""
+        await self.send(
+            f"🚨 *비상정지 활성화*\n\n"
+            f"사유: {reason}\n"
+            f"상태: 신규 진입 차단됨\n"
+            f"시간: {datetime.now().strftime('%H:%M:%S')}\n\n"
+            f"📊 대시보드: https://dashboard.yourdomain.com"
+        )
+```
+
+---
+
+## 6. 디렉토리 구조
 
 ```
-trading-platform-order/
+kimptrade/
 ├── src/
-│   ├── services/               # 공통 서비스
-│   │   ├── emergency_stop.py   # 비상정지 (PC/모바일 공유)
-│   │   ├── position_monitor.py
-│   │   └── pnl_calculator.py
-│   │
-│   ├── dashboard/              # PC용 Streamlit
-│   │   ├── app.py
+│   ├── dashboard/              # 웹 대시보드
+│   │   ├── app.py              # Streamlit 메인
 │   │   ├── components/
 │   │   │   ├── emergency_panel.py
 │   │   │   ├── position_card.py
@@ -547,208 +445,209 @@ trading-platform-order/
 │   │   │   ├── pnl_card.py
 │   │   │   ├── system_status.py
 │   │   │   └── trade_history.py
-│   │   └── config.py
+│   │   └── services/
+│   │       └── emergency_stop.py
 │   │
-│   └── telegram_bot/           # 모바일용 Telegram
-│       ├── bot.py              # 메인 봇
-│       ├── handlers/
-│       │   ├── status.py
-│       │   ├── position.py
-│       │   ├── emergency.py
-│       │   └── kimp.py
-│       ├── notifier.py         # 푸시 알림
-│       └── config.py
+│   ├── telegram/               # 알림 전용
+│   │   └── notifier.py
+│   │
+│   ├── collectors/             # 데이터 수집 (기존)
+│   ├── calculators/            # 지표 계산 (기존)
+│   └── webhook/                # 웹훅 수신 (기존)
 │
-├── Dockerfile.dashboard        # PC 대시보드
-├── Dockerfile.telegram         # Telegram 봇
-└── docker-compose.yml
+├── Dockerfile.dashboard        # 대시보드 Docker
+├── docker-compose.yml          # 통합 설정
+└── cloudflared/
+    └── config.yml              # Cloudflare Tunnel 설정
 ```
 
 ---
 
-## 6. Docker 설정
+## 7. Docker 설정
 
-### 6.1 docker-compose.yml
+### 7.1 docker-compose.yml
 
 ```yaml
 version: '3.8'
 
 services:
-  # Redis (비상정지 플래그 저장)
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    restart: always
+  # 데이터 수집기 (기존)
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kimptrade-collector
+    restart: unless-stopped
+    env_file:
+      - .env
 
-  # PC용 대시보드 (로컬 접속만)
+  # API 서버 (기존)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kimptrade-api
+    command: ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  # 웹 대시보드 (신규)
   dashboard:
     build:
       context: .
       dockerfile: Dockerfile.dashboard
+    container_name: kimptrade-dashboard
     ports:
-      - "8501:8501"  # localhost:8501
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-    depends_on:
-      - redis
-    restart: always
-
-  # Telegram 봇 (모바일 접근)
-  telegram-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.telegram
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-    depends_on:
-      - redis
-    restart: always
+      - "8501:8501"  # Cloudflare Tunnel이 연결
+    env_file:
+      - .env
+    restart: unless-stopped
 ```
 
-### 6.2 Dockerfile.dashboard
+### 7.2 Dockerfile.dashboard
 
 ```dockerfile
 FROM python:3.11-slim
 
 WORKDIR /app
 
+# 시스템 의존성
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 의존성
 COPY requirements-dashboard.txt .
 RUN pip install --no-cache-dir -r requirements-dashboard.txt
 
-COPY src/services/ ./services/
-COPY src/dashboard/ ./dashboard/
+# 소스 코드
+COPY src/ ./src/
+
+# 환경 변수
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "src/dashboard/app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true"]
 ```
 
-### 6.3 Dockerfile.telegram
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY requirements-telegram.txt .
-RUN pip install --no-cache-dir -r requirements-telegram.txt
-
-COPY src/services/ ./services/
-COPY src/telegram_bot/ ./telegram_bot/
-
-CMD ["python", "telegram_bot/bot.py"]
-```
-
-### 6.4 Requirements
+### 7.3 requirements-dashboard.txt
 
 ```txt
-# requirements-dashboard.txt
 streamlit==1.29.0
 pandas==2.1.3
 plotly==5.18.0
-redis==5.0.1
 supabase==2.0.0
 python-dotenv==1.0.0
-
-# requirements-telegram.txt
-python-telegram-bot==20.7
-redis==5.0.1
-supabase==2.0.0
-python-dotenv==1.0.0
+loguru==0.7.2
 ```
 
 ---
 
-## 7. 환경 변수
+## 8. 환경 변수
 
 ```bash
 # .env
 
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here
-
-# Database
-SUPABASE_URL=http://localhost:54321
+# Supabase
+SUPABASE_URL=https://xxxxx.supabase.co
 SUPABASE_KEY=your_anon_key
 
-# Redis
-REDIS_URL=redis://localhost:6379
+# Telegram (알림용, 선택)
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Cloudflare (서버에서 설정)
+# cloudflared tunnel login으로 자동 생성됨
 ```
 
-### Telegram Bot 설정 방법
+---
 
-1. **BotFather에서 봇 생성**
-   - Telegram에서 @BotFather 검색
-   - `/newbot` 명령어 입력
-   - 봇 이름, 유저네임 설정
-   - **토큰 저장** → `TELEGRAM_BOT_TOKEN`
+## 9. 보안
 
-2. **Chat ID 확인**
-   - 봇과 대화 시작
-   - `https://api.telegram.org/bot{TOKEN}/getUpdates` 접속
-   - `chat.id` 확인 → `TELEGRAM_CHAT_ID`
+### 9.1 접근 제어
+
+| 항목 | 방법 |
+|------|------|
+| **웹 인증** | Cloudflare Zero Trust (Email OTP / OAuth) |
+| **허용 사용자** | Zero Trust Policy에서 이메일 화이트리스트 |
+| **HTTPS** | Cloudflare 자동 (무료 SSL) |
+| **서버 포트** | 외부 노출 없음 (Tunnel만 연결) |
+
+### 9.2 민감 정보 보호
+
+| 정보 | 웹 표시 | 이유 |
+|------|---------|------|
+| BTC 수량 | ✅ 표시 | 운영에 필요 |
+| 원화 평가액 | ⚠️ 선택 | 개인정보, 필요 시 표시 |
+| API 키 | ❌ 표시 안함 | 환경변수만 |
+| 주문 ID | ⚠️ 일부만 | 마스킹 처리 |
 
 ---
 
-## 8. 보안
+## 10. 배포 체크리스트
 
-### 8.1 접근 제어
+### 10.1 서버 설정
 
-| 항목 | PC (Streamlit) | 모바일 (Telegram) |
-|------|----------------|-------------------|
-| 접근 제한 | localhost만 | Chat ID 화이트리스트 |
-| 인증 | 없음 (로컬) | Bot Token + Chat ID |
-| 비상정지 권한 | 로컬 접속자 | 등록된 사용자만 |
+- [ ] cloudflared 설치
+- [ ] Cloudflare Tunnel 생성
+- [ ] DNS 레코드 추가
+- [ ] config.yml 설정
+- [ ] systemd 서비스 등록
 
-### 8.2 민감 정보 보호
+### 10.2 Cloudflare 설정
 
-- API 키: 환경변수로만 관리
-- 잔고: 대시보드에 표시 (로컬이므로 OK)
-- Telegram: 잔고 금액 표시 안함 (수량만 표시)
+- [ ] Zero Trust 앱 생성
+- [ ] Policy 설정 (이메일 화이트리스트)
+- [ ] 인증 방식 선택 (OTP / OAuth)
+
+### 10.3 Docker 배포
+
+- [ ] Dockerfile.dashboard 생성
+- [ ] docker-compose.yml 업데이트
+- [ ] `docker-compose up -d dashboard`
+
+### 10.4 테스트
+
+- [ ] 로컬 접속 테스트 (localhost:8501)
+- [ ] 외부 접속 테스트 (dashboard.yourdomain.com)
+- [ ] 인증 플로우 테스트
+- [ ] 비상정지 기능 테스트
+- [ ] 모바일 반응형 테스트
 
 ---
 
-## 9. 구현 로드맵 (Phase 3)
-
-| 주차 | 작업 | 산출물 |
-|------|------|--------|
-| 5주차 | 비상정지 백엔드 | EmergencyStop 클래스 (공통) |
-| 5주차 | Telegram Bot 기본 | 명령어 핸들러, 비상정지 |
-| 6주차 | Telegram 알림 | 진입/청산/에러 푸시 알림 |
-| 6주차 | Streamlit 대시보드 | 전체 UI 컴포넌트 |
-| 6주차 | Docker 통합 | docker-compose 완성 |
-
----
-
-## 10. 핵심 요약
+## 11. 핵심 요약
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    운영 인터페이스 최종 구조                      │
+│                 운영 인터페이스 v3.0 (웹 통합)                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│   🖥️ PC (Streamlit)              📱 모바일 (Telegram Bot)       │
-│   ─────────────────              ────────────────────           │
-│   localhost:8501                 @YourTradingBot                │
+│   🌐 웹 대시보드 (PC + 모바일 통합)                              │
+│   ─────────────────────────────────                             │
+│   URL: https://dashboard.yourdomain.com                         │
+│   인증: Cloudflare Zero Trust (Email OTP)                       │
 │                                                                 │
-│   • 상세 모니터링                • 비상정지 (핵심)               │
-│   • 김프 차트                    • 상태 요약                     │
-│   • 거래 이력                    • 푸시 알림                     │
-│   • 시스템 설정                  • 어디서나 접근                 │
+│   ✅ 어디서나 접근 가능                                          │
+│   ✅ PC/모바일 반응형                                            │
+│   ✅ 비상정지 버튼                                               │
+│   ✅ 실시간 모니터링                                             │
+│   ✅ 무료 (Cloudflare + Supabase)                               │
 │                                                                 │
-│   ❌ 클라우드 배포 안함          ✅ Telegram 서버 활용 (무료)    │
-│   ✅ 로컬 Docker 실행            ✅ 인터넷만 되면 OK             │
+│   🔔 Telegram (알림 전용, 선택)                                  │
+│   ─────────────────────────────                                 │
+│   진입/청산/에러 푸시 알림                                       │
 │                                                                 │
 │   ──────────────────────────────────────────────────────────   │
-│                    공통 백엔드: Redis 비상정지 플래그             │
+│                    Supabase: 비상정지 플래그 저장                 │
 │   ──────────────────────────────────────────────────────────   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
