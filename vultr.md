@@ -1,77 +1,131 @@
 # Vultr 서버 배포 가이드
 
-## 서버 정보
-
-| 서버 | 역할 | IP | URL |
-|------|------|-----|-----|
-| **Dashboard 서버** | FastAPI 대시보드 | 158.247.206.2 | http://158.247.206.2:8502 |
-| Collector 서버 | 데이터 수집 (kimptrade) | 64.176.229.30 | - |
-
-> **중요**: Dashboard는 kimptrade가 아닌 **이 레포(order)**에서 관리합니다.
+**최종 업데이트**: 2025-12-17
+**상태**: Dashboard V2 운영 중
 
 ---
 
-## 현재 배포 상태
+## 1. 서버 정보
 
-### Dashboard V2 (FastAPI) - 현재 운영 중
-- **URL**: http://158.247.206.2:8502
-- **컨테이너**: `kimptrade-dashboard-v2`
-- **포트**: 8502
-- **디자인**: Neon Daybreak (Lime-500, Hard Shadows)
-- **레포 경로**: `/root/order`
+### 1.1 서버 목록
 
-### Dashboard V1 (Streamlit) - 레거시
-- **URL**: http://158.247.206.2:8501
-- **컨테이너**: `kimptrade-dashboard`
-- **포트**: 8501
-- **레포 경로**: `/root/kimptrade` (더 이상 업데이트 안함)
+| 서버 | 역할 | IP | 도메인 |
+|------|------|-----|--------|
+| **Dashboard** | FastAPI 대시보드 | 158.247.206.2 | na4.pe.kr:8502 |
+| Collector | 데이터 수집 | 64.176.229.30 | - |
+
+### 1.2 Dashboard 서버 스펙
+
+| 항목 | 값 |
+|------|-----|
+| OS | Ubuntu 22.04.5 LTS |
+| CPU | 1 vCPU (Xeon Skylake) |
+| RAM | 951MB |
+| Disk | 25GB SSD |
+| Docker | 29.1.3 |
+| Docker Compose | v5.0.0 |
 
 ---
 
-## 배포 방법 (Dashboard V2)
+## 2. 현재 운영 상태
 
-### 1. SSH 접속
+### 2.1 Dashboard V2
+
+| 항목 | 값 |
+|------|-----|
+| **URL** | http://na4.pe.kr:8502 |
+| **직접 IP** | http://158.247.206.2:8502 |
+| **컨테이너** | `kimptrade-dashboard-v2` |
+| **이미지** | `order-dashboard-v2:latest` (306MB) |
+| **프레임워크** | FastAPI + Jinja2 |
+| **디자인** | Neon Daybreak |
+| **서버 경로** | `/root/order` |
+| **브랜치** | `feat/dashboard-migration` |
+
+### 2.2 API 엔드포인트
+
+| 엔드포인트 | 설명 |
+|------------|------|
+| `GET /` | 메인 대시보드 |
+| `GET /api/health` | 헬스체크 |
+| `GET /api/kimp` | 김프율 데이터 |
+| `GET /api/position` | 포지션 정보 |
+| `GET /api/pnl` | 손익 정보 |
+
+### 2.3 헬스체크 응답 예시
+
+```json
+{
+  "status": "healthy",
+  "services": {
+    "supabase": { "healthy": true },
+    "upbit": { "healthy": true, "latency_ms": 70 },
+    "binance": { "healthy": true, "latency_ms": 80 }
+  }
+}
+```
+
+---
+
+## 3. 레포지토리 구조
+
+### 3.1 레포 분리
+
+| 레포 | 역할 | 서버 |
+|------|------|------|
+| **trading-platform-order** | Dashboard V2 | 158.247.206.2 |
+| kimptrade | Backend, Collector, DB | 64.176.229.30 |
+
+### 3.2 서버 디렉토리
+
+```
+/root/order/                    ← Dashboard V2 (현재 운영)
+├── src/dashboard_v2/           ← FastAPI 앱
+├── docker-compose.dashboard-v2.yml
+├── Dockerfile.dashboard-v2
+└── .env                        ← 환경변수
+
+/root/kimptrade/                ← 레거시 (사용 안함)
+```
+
+---
+
+## 4. 환경변수
+
+### 4.1 필수 환경변수 (.env)
+
+```env
+# Supabase
+SUPABASE_URL=https://shcgnkmlmjohmpeoyjlz.supabase.co
+SUPABASE_KEY=eyJhbGci...  # anon key
+
+# Dashboard 설정
+REFRESH_INTERVAL=10       # 자동 새로고침 (초)
+API_TIMEOUT=10            # API 타임아웃 (초)
+FEE_RATE=0.0038           # 수수료율 (0.38%)
+DEBUG=false               # 디버그 모드
+```
+
+---
+
+## 5. 배포 방법
+
+### 5.1 SSH 접속
 
 ```bash
 ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2
 ```
 
-### 2. 코드 업데이트
+### 5.2 코드 업데이트 & 배포
 
 ```bash
-cd /root/order  # Dashboard V2 레포 경로
-
-# 최신 코드 가져오기
-git fetch origin
-git checkout feat/dashboard-migration  # 또는 main (PR 머지 후)
-git pull
-```
-
-### 3. Docker 재빌드 및 배포
-
-```bash
-# 캐시 없이 빌드
+cd /root/order
+git pull origin feat/dashboard-migration
 docker compose -f docker-compose.dashboard-v2.yml build --no-cache
-
-# 컨테이너 재시작
-docker compose -f docker-compose.dashboard-v2.yml down
 docker compose -f docker-compose.dashboard-v2.yml up -d
-
-# 로그 확인
-docker logs -f kimptrade-dashboard-v2
 ```
 
-### 4. 배포 확인
-
-```bash
-# 헬스체크
-curl http://localhost:8502/api/health
-
-# 컨테이너 상태
-docker ps | grep dashboard-v2
-```
-
-## 빠른 배포 (로컬에서 한 번에)
+### 5.3 빠른 배포 (로컬에서 한 번에)
 
 ```bash
 ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2 "\
@@ -81,110 +135,123 @@ ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2 "\
   docker compose -f docker-compose.dashboard-v2.yml up -d"
 ```
 
----
+### 5.4 배포 확인
 
-## 주의사항
-
-### ⚠️ 캐시 문제
-Docker가 코드 변경을 인식하지 못하면:
 ```bash
-docker compose -f docker-compose.dashboard.yml build --no-cache
-```
+# 헬스체크
+curl http://localhost:8502/api/health
 
-### ⚠️ 환경변수
-서버에 `.env` 파일 필요:
-```env
-SUPABASE_URL=https://shcgnkmlmjohmpeoyjlz.supabase.co
-SUPABASE_KEY=eyJhbGc...  # anon key
-```
+# 컨테이너 상태
+docker ps | grep dashboard-v2
 
-### ⚠️ 포트 바인딩
-- `127.0.0.1:8501`만 바인딩 (외부 직접 접근 불가)
-- Cloudflare Tunnel 통해서만 외부 접근
-
-### ⚠️ 레포 변경
-- **기존**: kimptrade 레포에서 Dashboard 관리
-- **현재**: order (trading-platform-order) 레포에서 관리
-- 서버의 코드 경로도 업데이트 필요할 수 있음
-
----
-
-## 파일 구조 (서버)
-
-```
-/root/kimptrade/  # 서버 경로 (변경 고려)
-├── src/
-│   └── dashboard/
-│       ├── app.py
-│       ├── components/
-│       ├── services/
-│       └── styles/
-├── docker-compose.dashboard.yml
-├── Dockerfile.dashboard
-├── requirements.txt
-└── .env
+# 로그 확인
+docker logs -f kimptrade-dashboard-v2
 ```
 
 ---
 
-## Cloudflare Tunnel (이미 설정됨)
+## 6. Docker 설정
 
-```
-[사용자] → [Cloudflare Zero Trust] → [Cloudflare Tunnel] → [Dashboard 서버]
-              (이메일 OTP 인증)         (cloudflared)        localhost:8501
+### 6.1 Docker Compose (docker-compose.dashboard-v2.yml)
+
+```yaml
+services:
+  dashboard-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard-v2
+    container_name: kimptrade-dashboard-v2
+    restart: unless-stopped
+    ports:
+      - "8502:8502"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - REFRESH_INTERVAL=${REFRESH_INTERVAL:-10}
+      - API_TIMEOUT=${API_TIMEOUT:-10}
+      - FEE_RATE=${FEE_RATE:-0.0038}
+      - DEBUG=${DEBUG:-false}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8502/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 ```
 
-터널 관리:
+### 6.2 주요 명령어
+
 ```bash
-# 터널 상태 확인
-systemctl status cloudflared
+# 상태 확인
+docker ps
+docker stats kimptrade-dashboard-v2
 
-# 터널 재시작
-systemctl restart cloudflared
+# 재시작
+docker compose -f docker-compose.dashboard-v2.yml restart
 
-# 터널 로그
-journalctl -u cloudflared -n 50
+# 로그
+docker logs -f kimptrade-dashboard-v2 --tail 100
+
+# 컨테이너 접속
+docker exec -it kimptrade-dashboard-v2 /bin/bash
 ```
 
 ---
 
-## Troubleshooting
+## 7. 네트워크
 
-### 대시보드 접근 불가
+### 7.1 열린 포트
+
+| 포트 | 서비스 | 상태 |
+|------|--------|------|
+| 22 | SSH | 열림 |
+| 8502 | Dashboard V2 | 열림 |
+
+### 7.2 방화벽 (UFW)
 
 ```bash
-# 1. 컨테이너 상태 확인
-docker ps | grep dashboard
+# 상태 확인
+ufw status
 
-# 2. 컨테이너 로그 확인
-docker logs kimptrade-dashboard --tail 50
-
-# 3. 포트 확인
-netstat -tlnp | grep 8501
-
-# 4. 터널 상태 확인
-systemctl status cloudflared
+# 현재 설정: SSH만 UFW에 등록
+# Docker가 8502 포트를 iptables로 직접 관리
 ```
 
-### 코드 변경이 반영 안 됨
+---
+
+## 8. Troubleshooting
+
+### 8.1 대시보드 접근 불가
 
 ```bash
-# 1. 코드 확인
-cat /root/kimptrade/src/dashboard/styles/neon_daybreak.py | head -20
+# 1. 컨테이너 상태
+docker ps | grep dashboard-v2
 
-# 2. 캐시 없이 재빌드
-docker compose -f docker-compose.dashboard.yml build --no-cache
-docker compose -f docker-compose.dashboard.yml up -d
+# 2. 로그 확인
+docker logs kimptrade-dashboard-v2 --tail 50
+
+# 3. 헬스체크
+curl http://localhost:8502/api/health
+
+# 4. 포트 확인
+ss -tlnp | grep 8502
 ```
 
-### Supabase 연결 실패
+### 8.2 코드 변경이 반영 안 됨
 
 ```bash
-# 1. .env 확인
-cat /root/kimptrade/.env | grep SUPA
+# 캐시 없이 재빌드
+docker compose -f docker-compose.dashboard-v2.yml build --no-cache
+docker compose -f docker-compose.dashboard-v2.yml up -d
+```
 
-# 2. 컨테이너 내부에서 테스트
-docker exec -it kimptrade-dashboard python -c "
+### 8.3 Supabase 연결 실패
+
+```bash
+# .env 확인
+cat /root/order/.env | grep SUPA
+
+# 컨테이너 내부에서 테스트
+docker exec -it kimptrade-dashboard-v2 python -c "
 from supabase import create_client
 import os
 client = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
@@ -194,21 +261,18 @@ print('Connected!')
 
 ---
 
-## 빠른 배포 스크립트
+## 9. 변경 이력
 
-로컬에서 실행:
-```bash
-# 1. 로컬 코드를 서버로 전송
-scp -i ~/.ssh/kimptrade_vultr -r ./src/dashboard root@158.247.206.2:/root/kimptrade/src/
-
-# 2. 서버에서 재빌드
-ssh -i ~/.ssh/kimptrade_vultr root@158.247.206.2 "cd /root/kimptrade && docker compose -f docker-compose.dashboard.yml build --no-cache && docker compose -f docker-compose.dashboard.yml up -d"
-```
+| 날짜 | 변경 내용 |
+|------|----------|
+| 2025-12-17 | Dashboard V2 배포 완료, V1 정리 |
+| 2025-12-17 | 도메인 na4.pe.kr:8502 연결 확인 |
+| 2025-12-17 | 문서 전면 재작성 |
 
 ---
 
-## 참고
+## 10. 관련 문서
 
-- **Dashboard 테스트 URL**: http://na4.pe.kr:8501
-- **E2E 테스트**: `npm test` (Playwright)
-- **Cloudflare 설정 문서**: `docs/CLOUDFLARE_SETUP.md` (kimptrade 레포)
+- [Dashboard 스펙](./docs/DASHBOARD_SPEC.md)
+- [디자인 시스템](./docs/DESIGN_SYSTEM.md)
+- [Feature Spec](./specs/003-dashboard-enhancement/spec.md)
