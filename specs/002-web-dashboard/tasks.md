@@ -74,6 +74,7 @@
 - [x] T021 [US1] Verify EmergencyPanel test passes (GREEN)
 - [x] T022 [US1] Integrate EmergencyPanel into src/dashboard/app.py
 - [x] T023 [US1] Add Telegram notification for emergency stop state change in src/telegram/notifier.py
+- [ ] T023-1 [US1] Write integration test verifying liquidation works during emergency stop (FR-003 검증) in tests/integration/test_emergency_stop_liquidation.py
 
 **Checkpoint**: User Story 1 완료 - 비상정지 제어 기능 독립 동작 확인
 
@@ -177,7 +178,11 @@
 **Purpose**: 최종 마무리 및 반응형 UI 검증
 
 - [ ] T053 [P] Add mobile-responsive CSS styling in src/dashboard/app.py
-- [ ] T054 [P] Add error handling for all data fetch operations
+- [ ] T054 [P] Add error handling for all data fetch operations (Edge Cases 포함):
+  - 인터넷 연결 끊김: 마지막 데이터 유지 + "연결 끊김" 배너 표시
+  - 비상정지 중복 클릭: 멱등성 보장 (이미 정지 상태면 무시)
+  - Supabase 연결 실패: 재시도 로직 + 에러 상태 표시
+  - API 타임아웃: 10초 타임아웃 후 에러 표시
 - [ ] T055 Run all tests and ensure 100% pass rate
 - [ ] T056 Run black and isort on src/dashboard/
 - [ ] T057 Test mobile view on actual mobile device

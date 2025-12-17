@@ -130,7 +130,7 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 비상정지 활성화 후 1초 이내에 모든 신규 진입이 차단된다
+- **SC-001**: 비상정지 활성화 후 1초 이내에 Supabase에 상태가 반영되고, 모든 신규 진입이 차단된다 (측정: Supabase updated_at 타임스탬프 기준)
 - **SC-002**: 대시보드 데이터는 10초 이내에 자동 갱신된다
 - **SC-003**: 외부 네트워크에서 대시보드 접속 시 5초 이내에 인증 화면이 표시된다
 - **SC-004**: 인증된 사용자는 PC와 모바일에서 동일한 기능을 사용할 수 있다
@@ -140,8 +140,10 @@
 
 ## Assumptions
 
-- Vultr 서버(64.176.229.30)에 기존 kimptrade 시스템이 운영 중
+- Vultr 서버(64.176.229.30)에 기존 kimptrade Collector 시스템이 운영 중
+- **Dashboard는 별도 Vultr 서버에 배포 (Collector와 장애 격리)**
 - Supabase에 기존 테이블(kimp_1m, positions, trades, fx_rates)이 존재
+- **system_status 테이블 추가 필요 (비상정지 상태 저장)**
 - Cloudflare 계정 보유 및 도메인 DNS가 Cloudflare에 연결됨
 - Telegram Bot이 이미 설정되어 있음 (기존 알림 시스템)
 - 운영자는 1-2명의 허용된 이메일 사용자로 제한
