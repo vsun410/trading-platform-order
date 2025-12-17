@@ -11,15 +11,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install Python dependencies
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir pip --upgrade && \
-    pip install --no-cache-dir .[dashboard]
+# Install Python dependencies directly (no package build needed)
+RUN pip install --no-cache-dir \
+    fastapi>=0.104.0 \
+    uvicorn>=0.24.0 \
+    jinja2>=3.1.0 \
+    python-multipart>=0.0.6 \
+    supabase>=2.0.0 \
+    pydantic>=2.0.0 \
+    pydantic-settings>=2.0.0 \
+    loguru>=0.7.0 \
+    python-dotenv>=1.0.0
 
 # Copy application code
 COPY src/dashboard_v2 ./src/dashboard_v2
